@@ -68,3 +68,65 @@ Known gaps:
 
 Next action:
 - H1-2 Extraction adapter + result type. Not started.
+
+## 2026-07-07 - H1-2 Extraction Adapter + Result Type
+
+Status: built and locally tested. Not merged.
+
+Branch: `feature/h1-2-extraction-adapter`
+
+Implemented:
+- `ExtractionAdapter` that accepts a `CanonicalPolicyDocument` and returns an
+  `ExtractionResult`.
+- Prompt loader for `prompts/extract_policy_v1.2.md`; prompt content was not
+  edited.
+- `{{POLICY_TEXT}}` injection from `CanonicalPolicyDocument.full_text`.
+- `ExtractionConfig` sourced from environment or local `.env` files.
+- Thin `AnthropicMessagesClient` wrapper using the official Anthropic SDK.
+- Model string and API key are config/environment inputs, not hardcoded.
+- Strict `schema_version == "1.2"` boundary validation.
+- Retry-once behavior for malformed model JSON.
+- `backend/.env.example` documents required extraction variables without
+  secrets.
+
+RED-proofs:
+- RED phase observed: `backend/tests/test_extraction_adapter.py` first failed
+  because `soteria.extraction` did not exist.
+- F18: string literal `"null"` in model JSON is normalized to JSON null before
+  return and is not silently stored as a string.
+- F18 targeted RED check: temporarily disabling normalization made
+  `test_f18_string_null_is_normalized_not_silently_stored` fail with
+  `AssertionError: assert 'null' is None`.
+- F19: malformed JSON from unescaped quotes in `raw_clause` is retried once;
+  if the retry is also malformed, `MalformedModelOutputError` is raised with a
+  clear "after 2 attempts" message.
+- F19 targeted RED check: temporarily disabling the retry made
+  `test_f19_malformed_raw_clause_is_retried_once_then_valid_response_is_returned`
+  fail before consuming the valid second response.
+
+Validation:
+- `python -m pytest backend/tests/test_extraction_adapter.py` passes with
+  `6 passed`.
+- `python -m pytest backend/tests` passes with `12 passed`.
+- `python -m compileall -q backend/src` passes.
+
+Focused-review flag:
+- Credential/config layer is implemented but not self-certified for security.
+  It reads `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` from environment/local
+  `.env`; this needs architect/security review before production use.
+
+Known gaps:
+- H1-2 follow-up (non-blocking): `_normalize_string_nulls` currently converts
+  any whole-string `"null"` to None globally across the JSON tree. Low
+  corruption risk (only fires on exact-match `"null"` strings, not `"null"`
+  within prose), but should be scoped to schema-nullable fields in a future
+  hardening pass.
+
+Self-audit against handoff prohibitions:
+- Prompt/taxonomy content not edited.
+- No renderer code added.
+- No storage, signup, session attachment, or TTL/deletion behavior added.
+- No gold regression runner added.
+
+Next action:
+- Architect review/ratification of H1-2. H1-3 not started.
