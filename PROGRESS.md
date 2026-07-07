@@ -71,9 +71,11 @@ Next action:
 
 ## 2026-07-07 - H1-2 Extraction Adapter + Result Type
 
-Status: built and locally tested. Not merged.
+Status: complete - merged to `main`.
 
 Branch: `feature/h1-2-extraction-adapter`
+
+Merge commit: `20d1b97d92a7ec3af0f417da9b0e886ce1dccbaf`
 
 Implemented:
 - `ExtractionAdapter` that accepts a `CanonicalPolicyDocument` and returns an
@@ -129,4 +131,4 @@ Self-audit against handoff prohibitions:
 - No gold regression runner added.
 
 Next action:
-- Architect review/ratification of H1-2. H1-3 not started.
+- H1-3 Ephemeral store + signup-free flow. Not started.
