@@ -1,0 +1,17 @@
+{
+	email {$ACME_EMAIL}
+	admin off
+}
+
+:80 {
+	encode zstd gzip
+
+	handle_path /api/* {
+		reverse_proxy {$BACKEND_UPSTREAM}
+	}
+
+	handle {
+		reverse_proxy {$FRONTEND_UPSTREAM}
+	}
+}
+
