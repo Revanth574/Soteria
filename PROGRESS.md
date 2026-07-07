@@ -2,9 +2,11 @@
 
 ## 2026-07-07 - H1-1 Ingestion Spine + Canonical Document
 
-Status: built and locally tested.
+Status: complete - merged to `main`.
 
 Branch: `feature/h1-1-ingestion-spine`
+
+Merge commit: `f7a3c6cd89384ed8e48205ef2209380c4de9ca06`
 
 Implemented:
 - Backend package scaffold under `backend/src/soteria`.
@@ -64,5 +66,5 @@ Known gaps:
   yet proves the image-PDF path specifically hits a clear ingestion error rather
   than another failure. Non-blocking; revisit when OCR/image support is scoped.
 
-Next unbuilt increment:
-- H1-2 Extraction adapter + result type.
+Next action:
+- H1-2 Extraction adapter + result type. Not started.
