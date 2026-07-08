@@ -15,7 +15,7 @@ def render_upload_page(config: EphemeralConfig) -> str:
         <main class="sheet upload-sheet">
           <h1>Read your policy before it reads you</h1>
           <p class="lede">Upload a health insurance PDF for a signup-free first analysis.</p>
-          <form method="post" enctype="multipart/form-data" data-max-bytes="{config.max_upload_bytes}">
+          <form method="post" action="/upload" enctype="multipart/form-data" data-max-bytes="{config.max_upload_bytes}">
             <label class="dropzone">
               <span>Drag a PDF here or pick a file</span>
               <input type="file" name="policy_pdf" accept="application/pdf,.pdf" required>
@@ -25,23 +25,6 @@ def render_upload_page(config: EphemeralConfig) -> str:
             <p class="progress" role="status" aria-live="polite">Analyzing your policy. This can take 30-90 seconds.</p>
           </form>
         </main>
-        <script>
-          const form = document.querySelector('form[data-max-bytes]');
-          const input = document.querySelector('input[type="file"]');
-          const progress = document.querySelector('.progress');
-          progress.hidden = true;
-          input?.addEventListener('change', () => {{
-            const file = input.files?.[0];
-            const max = Number(form.dataset.maxBytes);
-            if (file && file.size > max) {{
-              input.setCustomValidity('PDF is larger than the server upload limit.');
-              input.reportValidity();
-            }} else {{
-              input.setCustomValidity('');
-            }}
-          }});
-          form?.addEventListener('submit', () => {{ progress.hidden = false; }});
-        </script>
         """,
     )
 
@@ -144,6 +127,74 @@ def render_expired_page() -> str:
     )
 
 
+def render_processing_page(*, session_token: str) -> str:
+    return _page(
+        title="Analysis in progress",
+        refresh_url=f"/a/{session_token}",
+        body=f"""
+        <main class="sheet status-sheet">
+          <p class="eyebrow">Analysis in progress</p>
+          <h1>We are reading the policy wording</h1>
+          <p>This page refreshes automatically until the analysis is ready.</p>
+          <p class="muted">Typical turnaround is 30-90 seconds.</p>
+        </main>
+        """,
+    )
+
+
+def render_failure_page(*, session_token: str) -> str:
+    return _page(
+        title="Analysis failed",
+        body=f"""
+        <main class="sheet status-sheet">
+          <p class="eyebrow">Analysis failed</p>
+          <h1>We could not complete this analysis</h1>
+          <p>The policy was accepted, but the analyzer did not produce a valid result.</p>
+          <form method="post" action="/upload">
+            <p class="muted">Retry by uploading the policy again.</p>
+          </form>
+          <p><a href="/a/{_attr(session_token)}">Check status again</a></p>
+        </main>
+        """,
+    )
+
+
+def render_not_found_page() -> str:
+    return _page(
+        title="Analysis not found",
+        body="""
+        <main class="sheet status-sheet">
+          <h1>This analysis is not available</h1>
+          <p>The link may be expired, malformed, or already deleted.</p>
+        </main>
+        """,
+    )
+
+
+def render_rate_limited_page() -> str:
+    return _page(
+        title="Too many uploads",
+        body="""
+        <main class="sheet status-sheet">
+          <h1>Too many uploads</h1>
+          <p>Please wait before uploading another policy from this connection.</p>
+        </main>
+        """,
+    )
+
+
+def render_upload_too_large_page() -> str:
+    return _page(
+        title="Upload too large",
+        body="""
+        <main class="sheet status-sheet">
+          <h1>This PDF is too large</h1>
+          <p>Upload a smaller policy PDF within the configured size limit.</p>
+        </main>
+        """,
+    )
+
+
 def _render_red_flag(flag: dict[str, Any], index: int) -> str:
     return f"""
     <article class="red-flag-card">
@@ -223,75 +274,19 @@ def _display_value(value: Any) -> str:
     return str(value)
 
 
-def _page(*, title: str, body: str) -> str:
+def _page(*, title: str, body: str, refresh_url: str | None = None) -> str:
+    refresh = (
+        f'  <meta http-equiv="refresh" content="2; url={_attr(refresh_url)}">\n'
+        if refresh_url is not None
+        else ""
+    )
     return f"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+{refresh}  <link rel="stylesheet" href="/static/soteria.css">
   <title>{_text(title)}</title>
-  <style>
-    :root {{
-      --paper: #f8f4ea;
-      --ink: #15120d;
-      --rule: #d2c5ae;
-      --accent: #0f6f5c;
-      --warn: #9f2f24;
-    }}
-    body {{
-      margin: 0;
-      background: linear-gradient(180deg, #f8f4ea 0%, #eee5d3 100%);
-      color: var(--ink);
-      font-family: Georgia, 'Times New Roman', serif;
-      line-height: 1.5;
-    }}
-    .sheet {{
-      width: min(920px, calc(100% - 32px));
-      margin: 32px auto;
-      background: rgba(255, 252, 245, 0.9);
-      border: 1px solid var(--rule);
-      padding: 28px;
-      box-shadow: 0 16px 50px rgba(40, 30, 20, 0.12);
-    }}
-    .eyebrow {{
-      color: var(--accent);
-      font-size: 0.82rem;
-      font-weight: 700;
-      margin: 0 0 8px;
-      text-transform: uppercase;
-    }}
-    h1, h2, h3 {{ margin-top: 0; }}
-    .dropzone {{
-      display: grid;
-      min-height: 160px;
-      place-items: center;
-      border: 2px dashed var(--rule);
-      background: #fffaf0;
-      cursor: pointer;
-    }}
-    button {{
-      background: var(--ink);
-      border: 0;
-      color: #fffaf0;
-      margin-top: 16px;
-      padding: 10px 14px;
-    }}
-    .red-flag-card, .field-row {{
-      border-top: 1px solid var(--rule);
-      padding: 16px 0;
-    }}
-    .scenario {{ color: var(--warn); }}
-    .raw-clause {{
-      background: #fffaf0;
-      border: 1px solid var(--rule);
-      max-height: 220px;
-      overflow: auto;
-      padding: 12px;
-      white-space: pre-wrap;
-    }}
-    .muted, .file-note {{ color: #6d6255; }}
-    code {{ background: #fffaf0; padding: 2px 4px; }}
-  </style>
 </head>
 <body>
 {body}
@@ -315,7 +310,12 @@ def escape_attr(value: Any) -> str:
 
 def render_raw_clause_block(raw_clause: Any) -> str:
     raw_clause_text = "" if raw_clause is None else str(raw_clause)
-    return f'<pre class="raw-clause">{escape_text(raw_clause_text)}</pre>'
+    return (
+        '<div class="clause-box">'
+        '<p class="verified-marker">verified against the wording</p>'
+        f'<pre class="raw-clause">{escape_text(raw_clause_text)}</pre>'
+        "</div>"
+    )
 
 
 def _text(value: Any) -> str:

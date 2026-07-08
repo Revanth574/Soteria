@@ -135,7 +135,7 @@ Next action:
 
 ## 2026-07-08 - H1-3 Ephemeral Store + Signup-Free Flow
 
-Status: built and locally tested. Not merged.
+Status: complete - merged to `main`.
 
 Branch: `feature/h1-3-ephemeral-store`
 
@@ -299,6 +299,8 @@ Status: built and locally tested. Not merged.
 
 Branch: `feature/h1-5-public-page-generator`
 
+Merge commit: `50afd55`
+
 Implemented:
 - Build-time public page generator under `soteria.public_pages`.
 - `generate_public_page_html` accepts ExtractionResult-shaped JSON plus an
@@ -382,4 +384,125 @@ Self-audit against handoff prohibitions:
 - No H1-6 or post-H1-5 work started.
 
 Next action:
-- Architect review/ratification of H1-5. Next increment not started.
+- H1-6 HTTP layer, real extractor, and design system. In progress on
+  `feature/h1-6-http-real-extractor-design-system`.
+
+## 2026-07-08 - H1-6 HTTP Layer + Claude Extractor + Certified-Record Design System
+
+Status: built and locally tested. Not merged.
+
+Branch: `feature/h1-6-http-real-extractor-design-system`
+
+Framework choice:
+- FastAPI was used for the HTTP layer. The app is built through an injectable
+  factory so tests can wire `FakeExtractor` and a manual background queue while
+  production wiring can construct the real `ClaudeExtractor`.
+
+Implemented:
+- FastAPI routes:
+  - `GET /` upload page,
+  - `POST /upload` anonymous upload,
+  - `GET /a/{session_token}` anonymous result/status page,
+  - `POST /signup/request`,
+  - `GET /signup/confirm/{token}`,
+  - `GET /a/{session_token}/full` signed-up full tier.
+- `POST /upload` calls `SignupFreeFlow.submit_anonymous_upload` with
+  background mode and does not introduce a second upload path.
+- Explicit session status support in the SQLite store:
+  `processing`, `complete`, and `failed`.
+- Background analysis completion through `SignupFreeFlow.complete_analysis`.
+- Processing page uses meta-refresh polling, so it works without JavaScript.
+- Failure, malformed-token, unknown-token, and expired-token routes render clean
+  pages instead of stack traces or raw 500 bodies.
+- Rate-limit violations render HTTP 429 with a plain-language page.
+- Oversized uploads return HTTP 413 before multipart parsing when
+  `Content-Length` is over the configured cap plus multipart overhead; the
+  existing H1-3 upload guard remains the authoritative size check after read.
+- Client-IP policy:
+  - direct connection IP is used by default;
+  - `TRUST_PROXY_HEADERS=false` is documented in `.env.example`;
+  - when true, `X-Forwarded-For` is read and the last listed IP is used.
+- Security headers on all responses:
+  - `Content-Security-Policy`,
+  - `X-Content-Type-Options: nosniff`,
+  - `X-Frame-Options: DENY`.
+- `ClaudeExtractor` implementation with mocked-client unit tests:
+  - loads system and extraction prompt files at construction time;
+  - injects `{{POLICY_TEXT}}`;
+  - makes one Claude Messages request per analysis with a 120s timeout;
+  - reads API key from config/environment only;
+  - parses/validates schema version 1.2 and surfaces malformed JSON without
+    leaking raw model output to users.
+- Certified-record design system applied through a static stylesheet served by
+  the app:
+  - requested palette,
+  - Newsreader / IBM Plex Mono / Inter font families,
+  - verified clause markers,
+  - scenario "If -" framing,
+  - scrollable verbatim clause blocks.
+
+Markup/styling changes:
+- Removed the previous inline `<style>` block from H1-4 renderer pages and
+  replaced it with `/static/soteria.css`.
+- Removed the previous inline upload-page script to keep CSP simple and avoid
+  inline script allowances.
+- Added a wrapper around raw-clause `<pre>` blocks so the verified marker can be
+  displayed consistently. Anonymous/full tier selection logic was not changed.
+
+RED-proofs:
+- HTTP XSS: upload plus completed analysis containing
+  `<script>alert(1)</script>` in `raw_clause` renders escaped text and no raw
+  script tag.
+- Upload path integrity: oversized upload returns 413; the N+1th upload from
+  one IP returns 429; both are plain-language pages.
+- Status honesty: processing, complete, and failed sessions render distinct
+  honest pages; failure response contains no traceback or extractor exception
+  detail.
+- Token safety: malformed, unknown, and expired tokens each return clean 404
+  pages with no stack trace or 500 body.
+- Tier boundary over HTTP: anonymous route omits signed-up-tier fields; full
+  route includes them after signup attachment.
+- Proxy-header policy: default ignores `X-Forwarded-For`; trusted mode uses the
+  configured forwarded header behavior.
+- ClaudeExtractor tests use a mocked client only; zero real API calls are made
+  by the test suite.
+
+Validation:
+- `python -m pytest backend/tests/test_claude_extractor.py` passes with
+  `5 passed`.
+- `python -m pytest backend/tests/test_http_app.py` passes with `6 passed`.
+- `python -m pytest backend/tests` passes with `51 passed`.
+- `python -m compileall -q backend/src` passes.
+
+Deployment notes for H1-7:
+- Background analysis currently uses FastAPI `BackgroundTasks`, which is
+  in-process. A process restart can interrupt in-flight analyses; deployment
+  should decide whether to keep this for Horizon 1 or move to a durable queue.
+- `TRUST_PROXY_HEADERS` must stay false unless the app is behind a known trusted
+  proxy that controls `X-Forwarded-For`.
+- `SOTERIA_SYSTEM_PROMPT_PATH` defaults to `prompts/system.md`, but that file is
+  not present in the repo. Creating/providing that prompt remains a
+  Revanth-owned prompt asset decision; the extractor fails clearly at startup if
+  the configured file is missing.
+- No automatic Claude retries are implemented. Retry policy is deferred to
+  H1-7+ to avoid retry storms and paid-API cost incidents.
+- H1-7 should harden the background worker so any unexpected worker error,
+  including store/write failures outside the extraction path, deterministically
+  lands the session in `failed` instead of risking an indefinite processing
+  page.
+
+Known gaps:
+- No deployment config, real email delivery, or public-page hosting added.
+- Upload client-side size validation is no longer implemented with inline
+  JavaScript; server-side 413/validation behavior is covered. A future pass can
+  add a CSP-compatible external script if client-side validation is required.
+
+Self-audit against handoff prohibitions:
+- Prompt content not edited.
+- Docs and fixtures content not edited, except this required `PROGRESS.md`
+  update.
+- No deployment configs, email delivery, public-page hosting, page editor, CMS,
+  admin UI, or H2 feature work added.
+
+Next action:
+- Architect/security review and ratification of H1-6. H1-7 not started.

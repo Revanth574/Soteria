@@ -5,6 +5,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+AnalysisStatus = str
+
 
 @dataclass(frozen=True, slots=True)
 class SignupFreePreview:
@@ -27,6 +29,8 @@ class EphemeralSessionRecord:
     document_text: str
     expires_at: datetime | None
     account_id: str | None
+    status: AnalysisStatus = "complete"
+    failure_message: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
