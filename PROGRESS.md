@@ -132,3 +132,93 @@ Self-audit against handoff prohibitions:
 
 Next action:
 - H1-3 Ephemeral store + signup-free flow. Not started.
+
+## 2026-07-08 - H1-3 Ephemeral Store + Signup-Free Flow
+
+Status: built and locally tested. Not merged.
+
+Branch: `feature/h1-3-ephemeral-store`
+
+Implemented:
+- SQLite-backed `EphemeralStore` for anonymous sessions, signup tokens,
+  account attachment records, and deletion audit rows.
+- `EphemeralConfig` reads `DATABASE_URL` and `EPHEMERAL_DATA_DIR` from
+  environment/local `.env`; SQLite database files must live under
+  `EPHEMERAL_DATA_DIR`.
+- Anonymous upload flow that validates file size and PDF magic bytes without
+  requiring auth.
+- Per-IP in-memory anonymous upload rate limiting.
+- Ephemeral persistence of uploaded PDF artifact, canonical document text, and
+  `ExtractionResult` JSON keyed by opaque session token.
+- TTL enforcement for anonymous fetches with TTL capped at <= 24 hours.
+- Deletion job that removes expired anonymous records and their PDF artifacts,
+  then writes a deletion audit log.
+- Signup-free preview containing summary plus the top 3 red flags in full,
+  including raw clauses when present in the analysis JSON.
+- Magic-link signup stub token issuance and consume flow; real email delivery
+  remains out of scope.
+- Session-to-account attachment that makes the previously anonymous document
+  retrievable under the account and no longer subject to anonymous TTL deletion.
+
+RED-proofs:
+- RED phase observed: `backend/tests/test_ephemeral_flow.py` first failed
+  because `soteria.ephemeral` did not exist.
+- Deletion actually deletes: temporarily skipping artifact unlink made
+  `test_deletion_job_deletes_records_and_artifacts_not_just_flags` fail because
+  the SQLite row was gone but the PDF artifact still existed.
+- TTL enforcement: temporarily disabling the expiry check made
+  `test_ttl_is_enforced_on_fetch` return an expired session instead of `None`.
+- Guards without auth: temporarily disabling the anonymous PDF magic-byte guard
+  made `test_anonymous_upload_guards_run_without_auth` reach ingestion and
+  raise the wrong error instead of `UploadValidationError`.
+- Session-to-account attachment: temporarily leaving the anonymous expiry in
+  place made
+  `test_session_to_account_attachment_makes_anonymous_document_retrievable_under_account`
+  fail after TTL.
+- Architect Q1 deletion skip proof: `delete_expired` already skipped
+  account-attached sessions. Added
+  `test_delete_expired_skips_account_attached_sessions_and_artifacts`, which
+  proves the account-scoped record and PDF artifact survive cleanup after the
+  original anonymous TTL and that no deletion audit row is written for that
+  session.
+- Architect Q2 artifact path proof/fix: hostile filenames could influence the
+  artifact filename. Added a failing test for path traversal, absolute path,
+  and null-byte filenames, then fixed artifact path construction so the
+  on-disk path is derived from the opaque session token plus a fixed internal
+  artifact name. User-supplied filename remains display metadata in SQLite.
+
+Validation:
+- `python -m pytest backend/tests/test_ephemeral_flow.py` passes with
+  `8 passed`.
+- `python -m pytest backend/tests` passes with `20 passed`.
+- `python -m compileall -q backend/src` passes.
+
+Focused-review flag:
+- This is security-relevant and not self-certified. Architect/security review
+  should focus on deletion completeness, SQLite path confinement under
+  `EPHEMERAL_DATA_DIR`, anonymous rate limiting, and the decision to make
+  attached sessions no longer subject to anonymous TTL deletion.
+
+Known gaps:
+- Rate limiting is in-memory only; it will reset on process restart. This is
+  adequate for H1-3 tests but should move to a shared/persistent limiter before
+  multi-process deployment.
+- Rate-limit window rollover is unproven: no test currently proves a second
+  request succeeds after the hour elapses.
+- IP rate limiting trusts the passed-in `ip_address`; `X-Forwarded-For` trust
+  must be decided at deployment (H1-4+).
+- The store deletes the uploaded PDF artifact and database row. No additional
+  derived artifacts are currently written by H1-3.
+- The local `.env` example path from the handoff put the SQLite file outside
+  `EPHEMERAL_DATA_DIR`; the implementation enforces the stricter privacy
+  invariant that the database file itself must live under `EPHEMERAL_DATA_DIR`.
+
+Self-audit against handoff prohibitions:
+- Prompt/taxonomy content not edited.
+- No renderer code added.
+- No public red-flag page generator added.
+- No real email infrastructure added.
+- No H1-4 analysis rendering started.
+
+Next action:
+- Architect/security review/ratification of H1-3. H1-4 not started.
