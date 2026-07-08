@@ -15,7 +15,7 @@ from soteria.ephemeral.models import (
 )
 from soteria.ephemeral.store import EphemeralStore
 from soteria.extraction import ExtractionResult
-from soteria.ingestion import PdfUploadSource
+from soteria.ingestion import CanonicalPolicyDocument, PdfUploadSource
 
 _PDF_MAGIC = b"%PDF-"
 
@@ -48,13 +48,13 @@ class SignupFreeFlow:
         filename: str,
         ip_address: str,
         now: datetime | None = None,
+        analyze_inline: bool = True,
     ) -> AnonymousAnalysisResponse:
         now = now or datetime.now(UTC)
         self._validate_upload(pdf_bytes)
         self._rate_limiter.check(ip_address=ip_address, now=now)
 
         document = PdfUploadSource(pdf_bytes, filename=filename).ingest()
-        extraction_result = self.extractor.analyze(document)
         session_token = uuid4().hex
         expires_at = now + timedelta(seconds=self.config.ttl_seconds)
 
@@ -64,16 +64,52 @@ class SignupFreeFlow:
             filename=filename,
             pdf_bytes=pdf_bytes,
             document_text=document.full_text,
-            analysis=extraction_result,
+            analysis=None,
+            status="processing",
             created_at=now,
             expires_at=expires_at,
         )
+
+        if analyze_inline:
+            extraction_result = self.complete_analysis(session_token=session_token, now=now)
+        else:
+            extraction_result = None
 
         return AnonymousAnalysisResponse(
             session_token=session_token,
             expires_at=expires_at,
             preview=_preview_from_analysis(extraction_result),
         )
+
+    def complete_analysis(
+        self,
+        *,
+        session_token: str,
+        now: datetime | None = None,
+    ) -> ExtractionResult:
+        record = self.store.get_session(session_token, now=now or datetime.now(UTC))
+        if record is None:
+            raise LookupError("Ephemeral session is not available for analysis.")
+        try:
+            document = CanonicalPolicyDocument(
+                full_text=record.document_text,
+                source_type="pdf_upload",
+                checksum="stored-ephemeral-session",
+                pages=None,
+                source_metadata={"session_token": session_token},
+            )
+            extraction_result = self.extractor.analyze(document)
+        except Exception as exc:
+            self.store.mark_analysis_failed(
+                session_token=session_token,
+                failure_message="Analysis failed before a valid result was produced.",
+            )
+            raise exc
+        self.store.mark_analysis_complete(
+            session_token=session_token,
+            analysis=extraction_result,
+        )
+        return extraction_result
 
     def issue_signup_token(
         self,
@@ -111,8 +147,8 @@ class SignupFreeFlow:
             raise UploadValidationError("Anonymous upload must be a PDF.")
 
 
-def _preview_from_analysis(extraction_result: ExtractionResult) -> SignupFreePreview:
-    payload = extraction_result.json
+def _preview_from_analysis(extraction_result: ExtractionResult | None) -> SignupFreePreview:
+    payload = extraction_result.json if extraction_result is not None else {}
     red_flags = payload.get("red_flags") or []
     if not isinstance(red_flags, list):
         red_flags = []

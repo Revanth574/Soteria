@@ -35,7 +35,9 @@ class EphemeralStore:
         filename: str,
         pdf_bytes: bytes,
         document_text: str,
-        analysis: ExtractionResult,
+        analysis: ExtractionResult | None,
+        status: str = "complete",
+        failure_message: str | None = None,
         created_at: datetime,
         expires_at: datetime,
     ) -> None:
@@ -48,9 +50,10 @@ class EphemeralStore:
                 """
                 INSERT INTO anonymous_sessions (
                   session_token, account_id, ip_address, filename, artifact_path,
-                  document_text, analysis_json, created_at, expires_at
+                  document_text, analysis_json, status, failure_message,
+                  created_at, expires_at
                 )
-                VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     session_token,
@@ -58,7 +61,9 @@ class EphemeralStore:
                     filename,
                     str(artifact_path),
                     document_text,
-                    json.dumps(analysis.json),
+                    json.dumps(analysis.json if analysis is not None else {}),
+                    status,
+                    failure_message,
                     _format_dt(created_at),
                     _format_dt(expires_at),
                 ),
@@ -74,7 +79,7 @@ class EphemeralStore:
             row = connection.execute(
                 """
                 SELECT session_token, artifact_path, analysis_json, document_text,
-                       expires_at, account_id
+                       expires_at, account_id, status, failure_message
                 FROM anonymous_sessions
                 WHERE session_token = ?
                 """,
@@ -170,7 +175,7 @@ class EphemeralStore:
             row = connection.execute(
                 """
                 SELECT session_token, artifact_path, analysis_json, document_text,
-                       expires_at, account_id
+                       expires_at, account_id, status, failure_message
                 FROM anonymous_sessions
                 WHERE account_id = ? AND session_token = ?
                 """,
@@ -182,6 +187,38 @@ class EphemeralStore:
         if record.expires_at is not None and record.expires_at <= now:
             return None
         return record
+
+    def mark_analysis_complete(
+        self,
+        *,
+        session_token: str,
+        analysis: ExtractionResult,
+    ) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                UPDATE anonymous_sessions
+                SET analysis_json = ?, status = 'complete', failure_message = NULL
+                WHERE session_token = ?
+                """,
+                (json.dumps(analysis.json), session_token),
+            )
+
+    def mark_analysis_failed(
+        self,
+        *,
+        session_token: str,
+        failure_message: str,
+    ) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                UPDATE anonymous_sessions
+                SET status = 'failed', failure_message = ?
+                WHERE session_token = ?
+                """,
+                (failure_message, session_token),
+            )
 
     def delete_expired(self, *, now: datetime) -> DeletionResult:
         deleted_artifacts: list[str] = []
@@ -260,6 +297,8 @@ class EphemeralStore:
                   artifact_path TEXT NOT NULL,
                   document_text TEXT NOT NULL,
                   analysis_json TEXT NOT NULL,
+                  status TEXT NOT NULL DEFAULT 'complete',
+                  failure_message TEXT NULL,
                   created_at TEXT NOT NULL,
                   expires_at TEXT NULL
                 );
@@ -289,6 +328,18 @@ class EphemeralStore:
                 );
                 """
             )
+            _add_column_if_missing(
+                connection,
+                table_name="anonymous_sessions",
+                column_name="status",
+                declaration="status TEXT NOT NULL DEFAULT 'complete'",
+            )
+            _add_column_if_missing(
+                connection,
+                table_name="anonymous_sessions",
+                column_name="failure_message",
+                declaration="failure_message TEXT NULL",
+            )
 
     def _write_document_artifact(
         self,
@@ -316,7 +367,24 @@ def _record_from_row(row: sqlite3.Row) -> EphemeralSessionRecord:
         document_text=row["document_text"],
         expires_at=_parse_optional_dt(row["expires_at"]),
         account_id=row["account_id"],
+        status=row["status"],
+        failure_message=row["failure_message"],
     )
+
+
+def _add_column_if_missing(
+    connection: sqlite3.Connection,
+    *,
+    table_name: str,
+    column_name: str,
+    declaration: str,
+) -> None:
+    columns = {
+        row["name"]
+        for row in connection.execute(f"PRAGMA table_info({table_name})").fetchall()
+    }
+    if column_name not in columns:
+        connection.execute(f"ALTER TABLE {table_name} ADD COLUMN {declaration}")
 
 
 def _format_dt(value: datetime) -> str:
