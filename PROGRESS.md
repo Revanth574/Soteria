@@ -292,3 +292,94 @@ Self-audit against handoff prohibitions:
 
 Next action:
 - Architect review/ratification of H1-4. H1-5 not started.
+
+## 2026-07-08 - H1-5 Public Page Generator
+
+Status: built and locally tested. Not merged.
+
+Branch: `feature/h1-5-public-page-generator`
+
+Implemented:
+- Build-time public page generator under `soteria.public_pages`.
+- `generate_public_page_html` accepts ExtractionResult-shaped JSON plus an
+  optional explicit `policy_type`.
+- `generate_public_pages` reads JSON files and writes one standalone static
+  HTML file per input JSON to a designated output directory.
+- Public page template is distinct from the H1-4 in-app renderer and labelled
+  as a Plan C public red-flag page.
+- Extracted content rendering reuses H1-4 escaping primitives from
+  `soteria.web.render`, including a shared raw-clause block renderer.
+- Policy-type shape split:
+  - indemnity-style policies render `financial_impact_estimate` as the red-flag
+    exposure language;
+  - fixed-benefit policies (`critical_illness`, `fixed_benefit`) render
+    "at stake: the entire Sum Insured" and do not use percentage-of-bill
+    framing.
+- Data-driven verdict copy:
+  - any critical severity produces cautionary framing;
+  - medium-or-lower-only pages may use a more positive-but-caveated framing.
+- Public fallbacks for missing/schedule-dependent data:
+  - null `metadata.product_uin` renders "UIN not stated in published wording";
+  - empty `metadata.sum_insured_options` renders "set per policy schedule";
+  - extracted uncertainty notes and schedule-dependent values are surfaced in a
+    dedicated uncertainty section.
+- `pattern_id == "novel"` red flags render a distinct "outside numbered
+  taxonomy" marker.
+- Fixed-benefit "What this gets right" filtering prevents structurally
+  inapplicable "no room rent cap" and "no co-pay" claims from being inflated
+  into product strengths.
+
+RED-proofs:
+- RED phase observed: `backend/tests/test_public_page_generator.py` first
+  failed because `soteria.public_pages` did not exist.
+- Batch generation: six gold-shaped JSON fixtures produce six standalone HTML
+  files, each with escaped hostile extracted content.
+- Indemnity shape: red-flag cards use the extracted
+  `financial_impact_estimate`.
+- Fixed-benefit shape: red-flag cards use entire-Sum-Insured forfeiture
+  framing and do not render percentage-of-bill text.
+- Critical severity: verdict text is cautionary and does not contain
+  unconditionally positive phrases such as "genuinely good policy" or
+  "clean policy".
+- HDFC Ergo CI-equivalent fixture: null UIN and empty sum-insured options render
+  the required public fallback strings and do not render `None`.
+- Novel pattern: `pattern_id == "novel"` renders the distinct outside-taxonomy
+  marker exactly once.
+- Fixed-benefit strengths: HDFC Ergo CI-equivalent fixture keeps a positive
+  fixed-benefit mechanic while excluding "No room rent cap" and "No co-pay".
+
+Validation:
+- `python -m pytest backend/tests/test_public_page_generator.py` passes with
+  `8 passed`.
+- `python -m pytest backend/tests/test_web_renderer.py` passes with
+  `10 passed`.
+- `python -m pytest backend/tests` passes with `38 passed`.
+- `python -m compileall -q backend/src` passes.
+
+Gold fixture comparison:
+- The repo currently contains only one gold fixture file:
+  `fixtures/gold/GOLD_001_STARHEALTH_SUPERSTAR.md`.
+- The requested six gold-set JSON analysis fixtures are not present locally, so
+  H1-5 uses six synthetic gold-shaped JSON render fixtures:
+  `gold_001_star_super_star`, `gold_002_senior`, `gold_003_super_top_up`,
+  `gold_004_individual`, `gold_005_ci_hdfc_ergo`, and `gold_006_ci_alt`.
+- Generated output was compared against the Plan C public-page requirements
+  rather than against hand-built Plan C fixture pages, because those pages are
+  not present in this repo and were not touched.
+
+Known divergences from hand-built Plan C pages:
+- Bespoke per-policy insight sections such as SI-band tables, deductible
+  ledgers, and compounding-caps tables remain manual and are not synthesized.
+- The generator currently emits the shared public-page frame, metadata,
+  verdict, red-flag cards, strengths, and uncertainty sections only.
+
+Self-audit against handoff prohibitions:
+- Prompt/taxonomy content not edited.
+- Docs and fixtures content not edited, except this required `PROGRESS.md`
+  update.
+- No page editor, CMS, admin UI, public app route, or per-request serving layer
+  added.
+- No H1-6 or post-H1-5 work started.
+
+Next action:
+- Architect review/ratification of H1-5. Next increment not started.

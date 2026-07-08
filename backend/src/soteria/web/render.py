@@ -145,14 +145,13 @@ def render_expired_page() -> str:
 
 
 def _render_red_flag(flag: dict[str, Any], index: int) -> str:
-    raw_clause = "" if flag.get("raw_clause") is None else str(flag.get("raw_clause"))
     return f"""
     <article class="red-flag-card">
       <p class="eyebrow">Flag {index}</p>
       <h3>{_text(flag.get("title") or "Untitled red flag")}</h3>
       <p>{_text(flag.get("plain_explanation") or "")}</p>
       <p class="scenario">{_text(flag.get("scenario") or "")}</p>
-      <pre class="raw-clause">{escape(raw_clause, quote=False)}</pre>
+      {render_raw_clause_block(flag.get("raw_clause"))}
     </article>
     """
 
@@ -183,7 +182,7 @@ def _render_field_item(label: str, item: Any) -> str:
     confidence = _extract_confidence(item)
     body = _text(_display_value(item))
     source_html = (
-        f'<pre class="raw-clause">{escape(raw_clause, quote=False)}</pre>'
+        render_raw_clause_block(raw_clause)
         if raw_clause is not None
         else '<p class="muted">No source clause returned.</p>'
     )
@@ -306,12 +305,25 @@ def _list(value: Any) -> list[dict[str, Any]]:
     return [item for item in value if isinstance(item, dict)]
 
 
-def _text(value: Any) -> str:
+def escape_text(value: Any) -> str:
     return escape(str(value), quote=False)
 
 
-def _attr(value: Any) -> str:
+def escape_attr(value: Any) -> str:
     return escape(str(value), quote=True)
+
+
+def render_raw_clause_block(raw_clause: Any) -> str:
+    raw_clause_text = "" if raw_clause is None else str(raw_clause)
+    return f'<pre class="raw-clause">{escape_text(raw_clause_text)}</pre>'
+
+
+def _text(value: Any) -> str:
+    return escape_text(value)
+
+
+def _attr(value: Any) -> str:
+    return escape_attr(value)
 
 
 def _format_bytes(value: int) -> str:
