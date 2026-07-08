@@ -222,3 +222,73 @@ Self-audit against handoff prohibitions:
 
 Next action:
 - Architect/security review/ratification of H1-3. H1-4 not started.
+
+## 2026-07-08 - H1-4 Analysis Renderer Web UI
+
+Status: built and locally tested. Not merged.
+
+Branch: `feature/h1-4-analysis-renderer`
+
+Implemented:
+- Minimal server-rendered HTML layer under `soteria.web`.
+- Single-page PDF upload view with drag/drop language, file picker, client-side
+  max-size check mirroring `EphemeralConfig.max_upload_bytes`, and a visible
+  30-90 second analysis progress state on submit.
+- `AnalysisWebController.submit_upload` delegates to the existing H1-3
+  `SignupFreeFlow.submit_anonymous_upload`; no second upload path was added.
+- Anonymous results renderer with full summary and top-3 red flags, including
+  full `plain_explanation`, `scenario`, and untrimmed `raw_clause` blocks.
+- Signed-up full-results renderer grouping coverage, waiting periods,
+  sub-limits, exclusions, and all red flags with expandable source clause and
+  confidence display.
+- DEV-ONLY magic-link stub UI that surfaces the token and frames signup as
+  persistence ("keep this analysis"), not content ransom.
+- Stub signup consumption path that renders the signed-up full tier from the
+  attached account session.
+- Expired/not-found analysis page for expired anonymous sessions.
+
+Tech choice:
+- Used server-rendered Python HTML functions with minimal JavaScript only for
+  client-side file-size validation and progress state. No SPA framework was
+  added because the product is document-reading first, and this keeps the UI
+  fast, inspectable, and usable without client-side rendering for results.
+
+RED-proofs:
+- RED phase observed: `backend/tests/test_web_renderer.py` first failed because
+  `soteria.web` did not exist.
+- XSS: a `raw_clause` containing `<script>alert(1)</script>` renders as escaped
+  visible text and does not appear as executable script markup.
+- Anonymous completeness: a fixture with 5 red flags renders exactly 3
+  anonymous red-flag cards, and the top-3 raw clauses appear in full.
+- Tier boundary: coverage/waiting-period fields outside the anonymous tier are
+  absent from anonymous HTML, not hidden by CSS.
+- Expired-session UX: fetching an expired session renders the expired page with
+  no stack trace or empty 500.
+
+Validation:
+- `python -m pytest backend/tests/test_web_renderer.py` passes with
+  `10 passed`.
+- `python -m pytest backend/tests` passes with `30 passed`.
+- `python -m compileall -q backend/src` passes.
+
+Known gaps:
+- Only one gold fixture exists in the repo (`GOLD_001_STARHEALTH_SUPERSTAR.md`).
+  H1-4 includes a Super Star-derived render fixture for the anonymous HTML dump,
+  but the requested six-gold render regression set cannot be completed until
+  the other five gold analysis files are present.
+- This is a renderer/controller layer, not a deployed HTTP server process. It
+  is ready to mount behind the backend route layer when that is scoped.
+- HTTP routing/serving framework is not yet wired; this increment covers render
+  logic only.
+- Certified-record design system (fonts, palette) from the Plan C public page
+  is not yet applied to this renderer and needs a follow-up pass for brand
+  consistency.
+
+Self-audit against handoff prohibitions:
+- Prompt/taxonomy content not edited.
+- Docs and fixtures content not edited.
+- No public red-flag page generator added.
+- No H1-5 work started.
+
+Next action:
+- Architect review/ratification of H1-4. H1-5 not started.
