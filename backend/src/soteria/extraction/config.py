@@ -19,6 +19,7 @@ class ExtractionConfig:
     api_key: str
     max_tokens: int = _DEFAULT_MAX_TOKENS
     temperature: float = _DEFAULT_TEMPERATURE
+    combined_prompt_path: Path | None = None
 
     @classmethod
     def from_env(
@@ -36,6 +37,8 @@ class ExtractionConfig:
         if not model:
             raise ConfigurationError("ANTHROPIC_MODEL is required.")
 
+        combined_prompt_path = merged_env.get("SOTERIA_COMBINED_PROMPT_PATH", "")
+
         return cls(
             prompt_path=prompt_path
             or Path(merged_env.get("SOTERIA_EXTRACT_PROMPT_PATH", str(_DEFAULT_PROMPT_PATH))),
@@ -45,6 +48,7 @@ class ExtractionConfig:
             temperature=float(
                 merged_env.get("ANTHROPIC_TEMPERATURE", str(_DEFAULT_TEMPERATURE))
             ),
+            combined_prompt_path=Path(combined_prompt_path) if combined_prompt_path else None,
         )
 
 

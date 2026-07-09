@@ -176,12 +176,19 @@ def create_app(
 def create_app_from_env() -> FastAPI:
     config = EphemeralConfig.from_env()
     extraction_config = ExtractionConfig.from_env()
-    system_prompt_path = Path(os.environ.get("SOTERIA_SYSTEM_PROMPT_PATH", "prompts/system.md"))
-    extractor = ClaudeExtractor(
-        config=ClaudeExtractorConfig.from_extraction_config(
+    if extraction_config.combined_prompt_path is not None:
+        extractor_config = ClaudeExtractorConfig.from_combined_file(
+            extraction_config,
+            combined_prompt_path=extraction_config.combined_prompt_path,
+        )
+    else:
+        system_prompt_path = Path(os.environ.get("SOTERIA_SYSTEM_PROMPT_PATH", "prompts/system.md"))
+        extractor_config = ClaudeExtractorConfig.from_extraction_config(
             extraction_config,
             system_prompt_path=system_prompt_path,
         )
+    extractor = ClaudeExtractor(
+        config=extractor_config,
     )
     flow = SignupFreeFlow(
         store=EphemeralStore(config),
