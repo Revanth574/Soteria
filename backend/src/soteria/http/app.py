@@ -81,6 +81,10 @@ def create_app(
     async def upload_page() -> HTMLResponse:
         return HTMLResponse(render_upload_page(config))
 
+    @app.get("/health")
+    async def health() -> dict[str, str]:
+        return {"status": "ok"}
+
     @app.post("/upload")
     async def upload(
         request: Request,
