@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReAssure 2.0 — Policy Analysis | Soteria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FAF7F0; --paper-deep: #F1ECDE; --ink: #1C1B19; --ink-soft: #58554D; --ink-faint: #8B877C;
+    --teal: #0F6D5C; --teal-wash: #E4EFEC; --amber: #AE5A1B; --amber-wash: #F6E7D8;
+    --critical: #8C2F1E; --critical-wash: #F5DFD8; --rule: #DDD5C4; --white: #FFFFFF;
+    --font-display: 'Newsreader', Georgia, serif; --font-mono: 'IBM Plex Mono', 'Courier New', monospace; --font-body: 'Inter', -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.6; }
+  a { color: var(--teal); }
+  a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+  header.masthead { border-bottom: 1px solid var(--rule); padding: 22px 0; }
+  header.masthead .wrap { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .wordmark { font-family: var(--font-display); font-weight: 600; font-size: 22px; letter-spacing: 0.01em; color: var(--ink); text-decoration: none; }
+  .wordmark span { color: var(--teal); }
+  .masthead-tag { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
+  main.sheet { padding: 48px 0 24px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 10px; }
+  .eyebrow.teal { color: var(--teal); }
+  .eyebrow.amber { color: var(--amber); }
+  section.hero { padding-bottom: 36px; border-bottom: 1px solid var(--rule); margin-bottom: 40px; animation: rise 0.5s ease-out both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  h1.verdict { font-family: var(--font-display); font-size: 30px; line-height: 1.28; font-weight: 600; margin: 0 0 18px; max-width: 26ch; }
+  p.lede { font-size: 17px; color: var(--ink-soft); max-width: 64ch; margin: 0 0 22px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 18px; font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-faint); }
+  .meta-row strong { color: var(--ink-soft); font-weight: 500; }
+  h2.section-title { font-family: var(--font-display); font-size: 22px; font-weight: 600; margin: 0 0 6px; }
+  p.section-sub { font-size: 14.5px; color: var(--ink-soft); margin: 0 0 24px; max-width: 58ch; }
+  section { margin-bottom: 48px; }
+  .red-flags { display: flex; flex-direction: column; gap: 20px; }
+  .red-flag-card { background: var(--white); border: 1px solid var(--rule); border-left: 3px solid var(--amber); border-radius: 3px; padding: 22px 24px; }
+  .flag-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .tag-group { display: flex; gap: 8px; align-items: center; }
+  .severity-tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; background: var(--amber-wash); color: var(--amber); white-space: nowrap; }
+  .severity-tag.medium { background: var(--paper-deep); color: var(--ink-soft); }
+  .red-flag-card h3 { font-family: var(--font-display); font-size: 19px; font-weight: 600; margin: 0 0 12px; }
+  .red-flag-card p { margin: 0 0 12px; font-size: 15px; }
+  .red-flag-card p.scenario { color: var(--ink-soft); font-style: italic; }
+  .red-flag-card p.scenario::before { content: "If — "; font-style: normal; color: var(--amber); font-weight: 600; }
+  .red-flag-card .impact { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-soft); margin: 0 0 14px; }
+  .red-flag-card .impact strong { color: var(--critical); }
+  .clause-box { background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; padding: 14px 16px; margin-top: 4px; }
+  .clause-verified { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--teal); margin: 0 0 8px; }
+  .clause-verified::before { content: "✓"; font-weight: 700; }
+  .clause-text { font-family: var(--font-mono); font-size: 13px; line-height: 1.55; color: var(--ink); margin: 0; white-space: pre-wrap; }
+  .clause-ref { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); margin: 8px 0 0; }
+  .callout { background: var(--paper-deep); border: 1px dashed var(--rule); border-radius: 3px; padding: 18px 20px; margin-top: -8px; }
+  .callout p { margin: 0; font-size: 14px; color: var(--ink-soft); }
+  .callout strong { color: var(--ink); }
+  .lock-clock-wrap { display: flex; align-items: stretch; gap: 16px; }
+  .lock-panel { flex: 1; background: var(--white); border: 1px solid var(--rule); border-radius: 3px; padding: 22px; }
+  .lock-panel.before { border-top: 3px solid var(--teal); }
+  .lock-panel.after { border-top: 3px solid var(--amber); }
+  .lock-value { font-family: var(--font-display); font-size: 19px; font-weight: 600; margin: 0 0 10px; }
+  .lock-panel p.detail { font-size: 14px; color: var(--ink-soft); margin: 0; }
+  .lock-arrow { display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 20px; color: var(--ink-faint); flex-shrink: 0; }
+  .rights-list { display: flex; flex-direction: column; gap: 14px; }
+  .right-item { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--paper-deep); }
+  .right-item:last-child { border-bottom: none; }
+  .right-check { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--teal-wash); color: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin-top: 2px; }
+  .right-item p { margin: 0; font-size: 15px; }
+  .right-item p strong { color: var(--ink); }
+  section.cta { background: var(--teal); color: var(--paper); border-radius: 4px; padding: 36px 32px; text-align: center; }
+  section.cta h2 { font-family: var(--font-display); font-size: 24px; font-weight: 600; margin: 0 0 10px; color: var(--white); }
+  section.cta p { max-width: 46ch; margin: 0 auto 22px; color: #D9EAE6; font-size: 15px; }
+  .btn { display: inline-block; background: var(--white); color: var(--teal); font-family: var(--font-body); font-weight: 600; font-size: 15px; padding: 13px 26px; border-radius: 3px; border: none; cursor: pointer; text-decoration: none; }
+  .btn:hover { background: var(--paper); }
+  .fine { font-family: var(--font-mono); font-size: 11.5px; color: #B9DAD3; margin: 14px 0 0; }
+  footer.integrity { border-top: 1px solid var(--rule); margin-top: 48px; padding: 24px 0 40px; }
+  .pledge { font-family: var(--font-display); font-style: italic; font-size: 15px; color: var(--ink-soft); max-width: 60ch; margin: 0 0 16px; }
+  .footer-row { display: flex; flex-wrap: wrap; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
+  @media (max-width: 560px) { h1.verdict { font-size: 24px; } .flag-head { flex-direction: column; gap: 6px; } .lock-clock-wrap { flex-direction: column; } .lock-arrow { transform: rotate(90deg); padding: 4px 0; } }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <a class="wordmark" href="#">SOTERIA<span>.</span></a>
+    <span class="masthead-tag">Policy analysis · public record</span>
+  </div>
+</header>
+
+<main class="sheet">
+  <div class="wrap">
+
+    <section class="hero">
+      <p class="eyebrow teal">Signup-free analysis · Niva Bupa Health Insurance · ReAssure 2.0</p>
+      <h1 class="verdict">Two genuinely rare benefits — each with a catch worth knowing before you rely on it.</h1>
+      <p class="lede">ReAssure 2.0 offers something few competitors do: unlimited coverage for life after your first claim, and a premium that stays locked at your entry age until then. Both are real, both are written into the base wording — and both come with a specific mechanical trigger that changes what you get. The room-rent clause, more conventionally, still decides how much of your bill you'll cover if you upgrade your room.</p>
+      <div class="meta-row">
+        <span><strong>UIN</strong> NBHHLIP27054V032627</span>
+        <span><strong>Policy type</strong> Family floater, individual, multi-individual</span>
+        <span><strong>Policy year</strong> 2026–27 (per UIN)</span>
+        <span><strong>Sum Insured</strong> set per policy schedule</span>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">What actually costs you money</h2>
+      <p class="section-sub">Two structural clauses, plus one premium mechanic that looks like a benefit until the exact moment you need it.</p>
+      <div class="red-flags">
+
+        <article class="red-flag-card">
+          <div class="flag-head">
+            <h3>Room category upgrade, with proportionate deduction</h3>
+            <div class="tag-group"><span class="severity-tag">High</span></div>
+          </div>
+          <p>You choose between a Single Private Room and a Sharing Room when you buy the policy. Get admitted to a room above that category, and the insurer proportionately reduces payouts across nearly every other line item — not just the room charge.</p>
+          <p class="scenario">you opted for a sharing-room plan but get admitted to a single room, the insurer pays the sharing-room rate and reduces your ₹4L surgery bill by up to 40% because of the same room breach.</p>
+          <p class="impact">Estimated exposure: <strong>20–50% of the total bill</strong>, depending on the room-rate gap.</p>
+          <div class="clause-box">
+            <p class="clause-verified">Verified against the wording</p>
+            <p class="clause-text">If you choose a room category higher than the room category available under your policy or as opted by you, claim settlement/payment may be subject to proportionate deductions on eligible medical expenses, based on the tariff arrangements agreed between the Us and the Network Provider and in accordance with the Policy terms.</p>
+            <p class="clause-ref">General Terms &gt; Claims &gt; Section 6.2.4(d)</p>
+          </div>
+        </article>
+
+        <article class="red-flag-card">
+          <div class="flag-head">
+            <h3>Annual aggregate deductible — defined in the wording, amount set by your schedule</h3>
+            <div class="tag-group"><span class="severity-tag">High</span></div>
+          </div>
+          <p>The base wording defines an aggregate annual deductible as a mechanic this product supports: your total approved expenses for the year must cross a threshold before the policy pays anything. Whether your specific policy has this active — and at what amount — isn't fixed in the wording. It's set on your individual schedule.</p>
+          <p class="scenario">your schedule sets a ₹3L deductible and your first claim is ₹2L, you pay all ₹2L yourself; a second ₹2L claim later only needs ₹1L more to clear the deductible, so the insurer pays the remaining ₹1L.</p>
+          <p class="impact">Exposure: <strong>100% of bills until cleared</strong> — only if a deductible is set on your schedule.</p>
+          <div class="clause-box">
+            <p class="clause-verified">Verified against the wording</p>
+            <p class="clause-text">Annual Aggregate Deductible — This is an aggregate amount in a year that is incurred by you on Expenses... which we will NOT pay. Once the total expense exceeds this amount, balance we will pay.</p>
+            <p class="clause-ref">Benefits available under the policy &gt; Section 4.18</p>
+          </div>
+          <div class="callout" style="margin-top: 16px;">
+            <p><strong>Check your schedule:</strong> co-payment works the same way — the wording defines the mechanic (Section 4.19) but sets no base percentage. Whether either clause applies to you, and at what number, is only answered by your own policy schedule, not this published wording.</p>
+          </div>
+        </article>
+
+        <article class="red-flag-card">
+          <div class="flag-head">
+            <h3>"Lock the Clock" unlocks — permanently — on your first claim</h3>
+            <div class="tag-group"><span class="severity-tag medium">Medium</span></div>
+          </div>
+          <p>The policy locks your premium at your entry age as a headline feature. That lock isn't permanent: the moment your first claim is paid, it breaks for good. Every renewal after that is priced at your real, current age.</p>
+          <p class="scenario">you buy the policy at 30 and file your first claim at 45, your next renewal prices you as a 46-year-old — the 15 years of locked savings end in a single premium jump.</p>
+          <p class="impact">Estimated impact: <strong>a 30–100%+ premium jump</strong> at the next renewal after your first claim.</p>
+          <div class="clause-box">
+            <p class="clause-verified">Verified against the wording</p>
+            <p class="clause-text">Lock the Clock: Your age is locked at entry when you buy the policy, till a claim is paid... Post the claim is paid, the premium charged will be as per your current age and will continue to change as per the age slabs at each renewal.</p>
+            <p class="clause-ref">Benefits available under the policy &gt; Section 4.7.2</p>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">"Lock the Clock" — the two states</h2>
+      <p class="section-sub">Marketed as a single benefit. Mechanically, it's two different premium behaviors with one trigger between them.</p>
+      <div class="lock-clock-wrap">
+        <div class="lock-panel before">
+          <p class="eyebrow teal">Before your first claim</p>
+          <p class="lock-value">Premium locked at entry age</p>
+          <p class="detail">Every renewal is priced as if you're still the age you were when you bought the policy — for as long as you never file a successful claim.</p>
+        </div>
+        <div class="lock-arrow">→</div>
+        <div class="lock-panel after">
+          <p class="eyebrow amber">After your first paid claim</p>
+          <p class="lock-value">Premium recalculated to your real age</p>
+          <p class="detail">The lock breaks permanently. Every renewal from here on is priced at your actual current age, and continues rising with each age slab going forward.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">What this gets right</h2>
+      <p class="section-sub">Two of these are genuinely uncommon in the market, not just standard-issue benefits with new names.</p>
+      <div class="rights-list">
+        <div class="right-item"><span class="right-check">✓</span><p><strong>Unlimited Sum Insured for life, after your first claim.</strong> "ReAssure Forever" is real: once triggered, it stays for life as long as you renew without a break — genuinely rare among the policies in this series.</p></div>
+        <div class="right-item"><span class="right-check">✓</span><p><strong>Unutilized Sum Insured carries forward up to 10× under Booster+</strong>, not a fixed annual percentage bonus like most competitors offer.</p></div>
+        <div class="right-item"><span class="right-check">✓</span><p><strong>No ICU cap, regardless of room choice.</strong> ICU is always paid up to your base Sum Insured.</p></div>
+        <div class="right-item"><span class="right-check">✓</span><p><strong>180 days of post-hospitalization cover</strong> — double the 90-day standard most retail policies in this series offer.</p></div>
+        <div class="right-item"><span class="right-check">✓</span><p><strong>Organ donor coverage runs both directions</strong> — it pays donor harvesting expenses if you receive an organ, and your own harvesting expenses if you donate one.</p></div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <h2>Have this exact policy?</h2>
+      <p>This analysis is built from the published policy wording. Your actual schedule may differ — upload your own document and see exactly which of these clauses apply to you.</p>
+      <button class="btn" onclick="typeof sendPrompt === 'function' && sendPrompt('I want to check my own health insurance policy against these flags')">Check my policy free →</button>
+      <p class="fine">No signup to see your first analysis. We can't read what we don't keep.</p>
+    </section>
+
+  </div>
+</main>
+
+<footer class="integrity">
+  <div class="wrap">
+    <p class="pledge">"Every player selling you health insurance is paid by the insurer. Soteria never earns a commission — which is why we can tell you what a policy will actually do."</p>
+    <div class="footer-row">
+      <span>Analysis of public wording NBHHLIP27054V032627</span>
+      <span>Not affiliated with Niva Bupa</span>
+      <span>Not advice to buy or avoid</span>
+      <span>Verbatim clauses quoted for reference</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
