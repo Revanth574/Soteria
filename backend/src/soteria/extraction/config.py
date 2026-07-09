@@ -8,7 +8,6 @@ import os
 from soteria.extraction.errors import ConfigurationError
 
 _DEFAULT_MAX_TOKENS = 16000
-_DEFAULT_TEMPERATURE = 0.0
 _DEFAULT_PROMPT_PATH = Path("prompts/extract_policy_v1.2.md")
 
 
@@ -18,7 +17,7 @@ class ExtractionConfig:
     model: str
     api_key: str
     max_tokens: int = _DEFAULT_MAX_TOKENS
-    temperature: float = _DEFAULT_TEMPERATURE
+    temperature: float | None = None
     combined_prompt_path: Path | None = None
 
     @classmethod
@@ -55,9 +54,7 @@ class ExtractionConfig:
             model=model,
             api_key=api_key,
             max_tokens=int(merged_env.get("ANTHROPIC_MAX_TOKENS", str(_DEFAULT_MAX_TOKENS))),
-            temperature=float(
-                merged_env.get("ANTHROPIC_TEMPERATURE", str(_DEFAULT_TEMPERATURE))
-            ),
+            temperature=_optional_float(merged_env.get("ANTHROPIC_TEMPERATURE")),
             combined_prompt_path=Path(combined_prompt_path) if combined_prompt_path else None,
         )
 
@@ -91,3 +88,9 @@ def _read_dotenv(path: Path) -> dict[str, str]:
         key, value = stripped.split("=", 1)
         values[key.strip()] = value.strip().strip('"').strip("'")
     return values
+
+
+def _optional_float(value: str | None) -> float | None:
+    if value is None or not value.strip():
+        return None
+    return float(value)

@@ -118,7 +118,6 @@ sudo tee /opt/soteria/backend/.env >/dev/null <<'EOF'
 ANTHROPIC_API_KEY=<PASTE_REAL_KEY_ON_VM_ONLY>
 ANTHROPIC_MODEL=<PASTE_PRODUCTION_CLAUDE_MODEL>
 ANTHROPIC_MAX_TOKENS=16000
-ANTHROPIC_TEMPERATURE=0
 SOTERIA_COMBINED_PROMPT_PATH=/opt/soteria/prompts/extract_policy_v1.2.md
 DATABASE_URL=sqlite:////var/lib/soteria/soteria_dev.db
 EPHEMERAL_DATA_DIR=/var/lib/soteria
@@ -132,6 +131,10 @@ sudo chmod 0640 /opt/soteria/backend/.env
 ```
 
 Never commit this file or paste the real API key into logs or tickets.
+
+`ANTHROPIC_TEMPERATURE` is optional. Leave it unset for Claude models that
+reject the parameter, such as `claude-sonnet-5`; set it only when the configured
+model accepts an explicit temperature.
 
 ## 9. Install systemd Service
 
