@@ -536,6 +536,12 @@ Implemented:
   - Caddy reverse proxy install and reload,
   - TLS/health/static-page/upload verification commands,
   - redeploy and log-check commands.
+- Added combined prompt loading for production config:
+  `SOTERIA_COMBINED_PROMPT_PATH` points at the one committed prompt asset,
+  `prompts/extract_policy_v1.2.md`, and the extractor splits it on
+  `## EXTRACTION TASK` at startup.
+- Added explicit ambiguous-config validation: combined prompt mode now rejects
+  non-empty legacy two-file prompt env vars instead of silently choosing one.
 - Added `infra/soteria.service` production systemd unit template:
   - runs as `soteria`,
   - `WorkingDirectory=/opt/soteria/backend`,
@@ -565,9 +571,9 @@ Deployment inputs still required on the VM:
 - Real `ANTHROPIC_API_KEY` must be written manually into
   `/opt/soteria/backend/.env`; it is not committed.
 - Real `ANTHROPIC_MODEL` must be set in the same environment file.
-- `prompts/system.md` is not present in the repo and was not created because
-  prompt content is Revanth-owned. The runbook includes the exact command to
-  install that file on the VM before service start.
+- No manually provisioned `prompts/system.md` is required. The committed
+  combined prompt asset `prompts/extract_policy_v1.2.md` is sufficient on its
+  own when `SOTERIA_COMBINED_PROMPT_PATH` is set.
 - No committed static public HTML pages currently exist under `public/`,
   `policies/`, or another static HTML output directory. The production Caddy
   route is ready, but `/policies/...` will return a static 404 until those pages

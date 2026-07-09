@@ -61,12 +61,27 @@ Do not delete `/var/lib/soteria` during clean deploys. It contains `soteria_dev.
 
 ## 5. Clone Or Update Code
 
+If the VM needs a GitHub deploy key, create it once on the VM:
+
+```bash
+ssh-keygen -t ed25519 -C "soteria-deploy" -f ~/.ssh/soteria_deploy_key -N ""
+cat ~/.ssh/soteria_deploy_key.pub
+```
+
+This creates two files:
+- `~/.ssh/soteria_deploy_key` as the private key, which never leaves the VM.
+- `~/.ssh/soteria_deploy_key.pub` as the public key, which goes into GitHub as
+  the deploy key.
+
+Use the public key in GitHub first, then clone with SSH if you prefer deploy-key
+auth over HTTPS.
+
 First deploy:
 
 ```bash
 sudo mkdir -p /opt
 sudo chown "$(id -un):$(id -gn)" /opt
-git clone --branch main https://github.com/Revanth574/Soteria.git /opt/soteria
+git clone --branch main git@github.com:Revanth574/Soteria.git /opt/soteria
 ```
 
 Redeploy:
@@ -89,15 +104,12 @@ This installs from the committed `backend/pyproject.toml`; do not hand-pick depe
 
 ## 7. Provide Prompt Assets
 
-H1-7a does not modify `prompts/`. The repository currently contains `prompts/extract_policy_v1.2.md` but does not contain `prompts/system.md`.
-
-Create the Revanth-owned system prompt on the VM before starting the service:
-
-```bash
-sudo install -m 0640 -o soteria -g soteria /tmp/system.md /opt/soteria/prompts/system.md
-```
-
-Replace `/tmp/system.md` with the real file path you uploaded to the VM.
+The repository contains the combined prompt asset at
+`/opt/soteria/prompts/extract_policy_v1.2.md`. The app splits that file into
+system and extraction portions at startup using the `## EXTRACTION TASK`
+divider. No separate `system.md` file is required on the VM. When
+`SOTERIA_COMBINED_PROMPT_PATH` is set, the app uses it and ignores the older
+two-file prompt variables.
 
 ## 8. Create Production Environment File
 
@@ -107,8 +119,7 @@ ANTHROPIC_API_KEY=<PASTE_REAL_KEY_ON_VM_ONLY>
 ANTHROPIC_MODEL=<PASTE_PRODUCTION_CLAUDE_MODEL>
 ANTHROPIC_MAX_TOKENS=16000
 ANTHROPIC_TEMPERATURE=0
-SOTERIA_SYSTEM_PROMPT_PATH=/opt/soteria/prompts/system.md
-SOTERIA_EXTRACT_PROMPT_PATH=/opt/soteria/prompts/extract_policy_v1.2.md
+SOTERIA_COMBINED_PROMPT_PATH=/opt/soteria/prompts/extract_policy_v1.2.md
 DATABASE_URL=sqlite:////var/lib/soteria/soteria_dev.db
 EPHEMERAL_DATA_DIR=/var/lib/soteria
 EPHEMERAL_TTL_SECONDS=86400

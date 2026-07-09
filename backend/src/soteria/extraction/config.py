@@ -19,6 +19,7 @@ class ExtractionConfig:
     api_key: str
     max_tokens: int = _DEFAULT_MAX_TOKENS
     temperature: float = _DEFAULT_TEMPERATURE
+    combined_prompt_path: Path | None = None
 
     @classmethod
     def from_env(
@@ -36,6 +37,18 @@ class ExtractionConfig:
         if not model:
             raise ConfigurationError("ANTHROPIC_MODEL is required.")
 
+        combined_prompt_path = merged_env.get("SOTERIA_COMBINED_PROMPT_PATH", "")
+        legacy_prompt_vars = (
+            "SOTERIA_SYSTEM_PROMPT_PATH",
+            "SOTERIA_EXTRACT_PROMPT_PATH",
+        )
+        if combined_prompt_path and any(merged_env.get(name, "") for name in legacy_prompt_vars):
+            raise ConfigurationError(
+                "Ambiguous prompt configuration: SOTERIA_COMBINED_PROMPT_PATH, "
+                "SOTERIA_SYSTEM_PROMPT_PATH, and SOTERIA_EXTRACT_PROMPT_PATH "
+                "cannot be mixed; only one prompt-loading style may be set."
+            )
+
         return cls(
             prompt_path=prompt_path
             or Path(merged_env.get("SOTERIA_EXTRACT_PROMPT_PATH", str(_DEFAULT_PROMPT_PATH))),
@@ -45,6 +58,7 @@ class ExtractionConfig:
             temperature=float(
                 merged_env.get("ANTHROPIC_TEMPERATURE", str(_DEFAULT_TEMPERATURE))
             ),
+            combined_prompt_path=Path(combined_prompt_path) if combined_prompt_path else None,
         )
 
 

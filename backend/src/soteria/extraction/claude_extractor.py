@@ -15,6 +15,8 @@ from soteria.extraction.errors import ConfigurationError, ExtractionAdapterError
 from soteria.extraction.result import ExtractionResult
 from soteria.ingestion import CanonicalPolicyDocument
 
+_EXTRACTION_TASK_DIVIDER = "## EXTRACTION TASK"
+
 
 @dataclass(frozen=True, slots=True)
 class ClaudeExtractorConfig:
@@ -25,6 +27,8 @@ class ClaudeExtractorConfig:
     max_tokens: int = 16000
     temperature: float = 0.0
     timeout_seconds: float = 120.0
+    system_prompt_text: str | None = None
+    extraction_prompt_text: str | None = None
 
     @classmethod
     def from_extraction_config(
@@ -40,6 +44,31 @@ class ClaudeExtractorConfig:
             api_key=config.api_key,
             max_tokens=config.max_tokens,
             temperature=config.temperature,
+        )
+
+    @classmethod
+    def from_combined_file(
+        cls,
+        config: ExtractionConfig,
+        *,
+        combined_prompt_path: Path,
+    ) -> "ClaudeExtractorConfig":
+        try:
+            combined_prompt = combined_prompt_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise PromptTemplateError(
+                f"Could not read combined prompt: {combined_prompt_path}"
+            ) from exc
+        system_prompt, extraction_prompt = split_combined_prompt(combined_prompt)
+        return cls(
+            system_prompt_path=combined_prompt_path,
+            extraction_prompt_path=combined_prompt_path,
+            model=config.model,
+            api_key=config.api_key,
+            max_tokens=config.max_tokens,
+            temperature=config.temperature,
+            system_prompt_text=system_prompt,
+            extraction_prompt_text=extraction_prompt,
         )
 
 
@@ -110,10 +139,21 @@ class ClaudeExtractor:
         client: ClaudeClient | None = None,
     ) -> None:
         self.config = config
-        self.system_prompt = _read_required_prompt(config.system_prompt_path, "system prompt")
-        self.extraction_prompt_template = _read_required_prompt(
-            config.extraction_prompt_path,
-            "extraction prompt",
+        self.system_prompt = (
+            config.system_prompt_text
+            if config.system_prompt_text is not None
+            else _read_required_prompt(
+                config.system_prompt_path,
+                "system prompt",
+            )
+        )
+        self.extraction_prompt_template = (
+            config.extraction_prompt_text
+            if config.extraction_prompt_text is not None
+            else _read_required_prompt(
+                config.extraction_prompt_path,
+                "extraction prompt",
+            )
         )
         if _POLICY_TEXT_PLACEHOLDER not in self.extraction_prompt_template:
             raise PromptTemplateError(
@@ -145,3 +185,37 @@ def _read_required_prompt(path: Path, label: str) -> str:
         return path.read_text(encoding="utf-8")
     except OSError as exc:
         raise PromptTemplateError(f"Could not read {label}: {path}") from exc
+
+
+def split_combined_prompt(text: str) -> tuple[str, str]:
+    """Split the combined prompt before the extraction divider block.
+
+    The returned extraction prompt includes the divider line immediately before
+    ``## EXTRACTION TASK``, the heading itself, and the rest of the file. The
+    returned system prompt is everything before that block, with trailing
+    whitespace stripped.
+    """
+
+    lines = text.splitlines(keepends=True)
+    heading_index = next(
+        (index for index, line in enumerate(lines) if line.strip() == _EXTRACTION_TASK_DIVIDER),
+        None,
+    )
+    if heading_index is None:
+        raise PromptTemplateError(
+            f"Combined prompt must contain the expected divider text: "
+            f"{_EXTRACTION_TASK_DIVIDER}"
+        )
+
+    extraction_start_index = heading_index
+    if heading_index > 0 and _is_equals_divider(lines[heading_index - 1]):
+        extraction_start_index = heading_index - 1
+
+    system_prompt = "".join(lines[:extraction_start_index]).rstrip()
+    extraction_prompt = "".join(lines[extraction_start_index:])
+    return system_prompt, extraction_prompt
+
+
+def _is_equals_divider(line: str) -> bool:
+    stripped = line.strip()
+    return bool(stripped) and set(stripped) == {"="}
