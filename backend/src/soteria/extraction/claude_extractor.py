@@ -25,7 +25,7 @@ class ClaudeExtractorConfig:
     model: str
     api_key: str
     max_tokens: int = 16000
-    temperature: float = 0.0
+    temperature: float | None = None
     timeout_seconds: float = 120.0
     system_prompt_text: str | None = None
     extraction_prompt_text: str | None = None
@@ -80,7 +80,7 @@ class ClaudeClient(Protocol):
         prompt: str,
         model: str,
         max_tokens: int,
-        temperature: float,
+        temperature: float | None,
         timeout_seconds: float,
     ) -> str:
         """Return model text for one Claude Messages request."""
@@ -99,7 +99,7 @@ class AnthropicClaudeClient:
         prompt: str,
         model: str,
         max_tokens: int,
-        temperature: float,
+        temperature: float | None,
         timeout_seconds: float,
     ) -> str:
         try:
@@ -111,13 +111,15 @@ class AnthropicClaudeClient:
 
         try:
             client = Anthropic(api_key=self._api_key, timeout=timeout_seconds)
-            message = client.messages.create(
-                model=model,
-                system=system_prompt,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                messages=[{"role": "user", "content": prompt}],
-            )
+            request_kwargs = {
+                "model": model,
+                "system": system_prompt,
+                "max_tokens": max_tokens,
+                "messages": [{"role": "user", "content": prompt}],
+            }
+            if temperature is not None:
+                request_kwargs["temperature"] = temperature
+            message = client.messages.create(**request_kwargs)
         except TimeoutError as exc:
             raise ExtractionAdapterError("Claude request timed out.") from exc
         except Exception as exc:

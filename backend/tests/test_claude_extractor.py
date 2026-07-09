@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import sys
+import types
 
 import pytest
 
-from soteria.extraction import ClaudeExtractor, ClaudeExtractorConfig
+from soteria.extraction import AnthropicClaudeClient, ClaudeExtractor, ClaudeExtractorConfig
 from soteria.extraction.errors import ExtractionAdapterError, MalformedModelOutputError, PromptTemplateError
 from soteria.ingestion import CanonicalPolicyDocument
 
@@ -110,3 +112,43 @@ def test_client_timeout_or_api_error_surfaces_without_retry(tmp_path: Path) -> N
         extractor.analyze(_document())
 
     assert len(client.calls) == 1
+
+
+def test_anthropic_client_omits_temperature_when_none_and_sends_float(monkeypatch) -> None:
+    calls: list[dict] = []
+
+    class FakeMessages:
+        def create(self, **kwargs):
+            calls.append(kwargs)
+            return types.SimpleNamespace(content=[types.SimpleNamespace(text="{}")])
+
+    class FakeAnthropic:
+        def __init__(self, *, api_key: str, timeout: float) -> None:
+            self.messages = FakeMessages()
+
+    monkeypatch.setitem(
+        sys.modules,
+        "anthropic",
+        types.SimpleNamespace(Anthropic=FakeAnthropic),
+    )
+    client = AnthropicClaudeClient(api_key="test-key")
+
+    client.complete(
+        system_prompt="System",
+        prompt="Prompt",
+        model="claude-test",
+        max_tokens=100,
+        temperature=None,
+        timeout_seconds=10,
+    )
+    client.complete(
+        system_prompt="System",
+        prompt="Prompt",
+        model="claude-test",
+        max_tokens=100,
+        temperature=0.2,
+        timeout_seconds=10,
+    )
+
+    assert "temperature" not in calls[0]
+    assert calls[1]["temperature"] == 0.2
