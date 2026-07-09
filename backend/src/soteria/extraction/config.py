@@ -38,6 +38,16 @@ class ExtractionConfig:
             raise ConfigurationError("ANTHROPIC_MODEL is required.")
 
         combined_prompt_path = merged_env.get("SOTERIA_COMBINED_PROMPT_PATH", "")
+        legacy_prompt_vars = (
+            "SOTERIA_SYSTEM_PROMPT_PATH",
+            "SOTERIA_EXTRACT_PROMPT_PATH",
+        )
+        if combined_prompt_path and any(merged_env.get(name, "") for name in legacy_prompt_vars):
+            raise ConfigurationError(
+                "Ambiguous prompt configuration: SOTERIA_COMBINED_PROMPT_PATH, "
+                "SOTERIA_SYSTEM_PROMPT_PATH, and SOTERIA_EXTRACT_PROMPT_PATH "
+                "cannot be mixed; only one prompt-loading style may be set."
+            )
 
         return cls(
             prompt_path=prompt_path

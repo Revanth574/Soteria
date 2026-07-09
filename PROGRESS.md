@@ -540,6 +540,8 @@ Implemented:
   `SOTERIA_COMBINED_PROMPT_PATH` points at the one committed prompt asset,
   `prompts/extract_policy_v1.2.md`, and the extractor splits it on
   `## EXTRACTION TASK` at startup.
+- Added explicit ambiguous-config validation: combined prompt mode now rejects
+  non-empty legacy two-file prompt env vars instead of silently choosing one.
 - Added `infra/soteria.service` production systemd unit template:
   - runs as `soteria`,
   - `WorkingDirectory=/opt/soteria/backend`,
