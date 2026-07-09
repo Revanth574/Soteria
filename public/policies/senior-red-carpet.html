@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Senior Citizens Red Carpet — Policy Analysis | Soteria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FAF7F0;
+    --paper-deep: #F1ECDE;
+    --ink: #1C1B19;
+    --ink-soft: #58554D;
+    --ink-faint: #8B877C;
+    --teal: #0F6D5C;
+    --teal-wash: #E4EFEC;
+    --amber: #AE5A1B;
+    --amber-wash: #F6E7D8;
+    --critical: #8C2F1E;
+    --critical-wash: #F5DFD8;
+    --rule: #DDD5C4;
+    --white: #FFFFFF;
+    --font-display: 'Newsreader', Georgia, serif;
+    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+    --font-body: 'Inter', -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.6; }
+  a { color: var(--teal); }
+  a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+  header.masthead { border-bottom: 1px solid var(--rule); padding: 22px 0; }
+  header.masthead .wrap { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .wordmark { font-family: var(--font-display); font-weight: 600; font-size: 22px; letter-spacing: 0.01em; color: var(--ink); text-decoration: none; }
+  .wordmark span { color: var(--teal); }
+  .masthead-tag { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
+  main.sheet { padding: 48px 0 24px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 10px; }
+  .eyebrow.teal { color: var(--teal); }
+  section.hero { padding-bottom: 36px; border-bottom: 1px solid var(--rule); margin-bottom: 40px; animation: rise 0.5s ease-out both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  h1.verdict { font-family: var(--font-display); font-size: 30px; line-height: 1.28; font-weight: 600; margin: 0 0 18px; max-width: 26ch; }
+  p.lede { font-size: 17px; color: var(--ink-soft); max-width: 64ch; margin: 0 0 22px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 18px; font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-faint); }
+  .meta-row strong { color: var(--ink-soft); font-weight: 500; }
+  h2.section-title { font-family: var(--font-display); font-size: 22px; font-weight: 600; margin: 0 0 6px; }
+  p.section-sub { font-size: 14.5px; color: var(--ink-soft); margin: 0 0 24px; max-width: 58ch; }
+  section { margin-bottom: 48px; }
+  .red-flags { display: flex; flex-direction: column; gap: 20px; }
+  .red-flag-card { background: var(--white); border: 1px solid var(--rule); border-left: 3px solid var(--amber); border-radius: 3px; padding: 22px 24px; }
+  .red-flag-card.critical { border-left-color: var(--critical); }
+  .flag-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .tag-group { display: flex; gap: 8px; align-items: center; }
+  .severity-tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; background: var(--amber-wash); color: var(--amber); white-space: nowrap; }
+  .severity-tag.critical { background: var(--critical-wash); color: var(--critical); }
+  .scope-tag { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.03em; padding: 3px 8px; border-radius: 2px; background: var(--paper-deep); color: var(--ink-faint); border: 1px solid var(--rule); white-space: nowrap; }
+  .red-flag-card h3 { font-family: var(--font-display); font-size: 19px; font-weight: 600; margin: 0 0 12px; }
+  .red-flag-card p { margin: 0 0 12px; font-size: 15px; }
+  .red-flag-card p.scenario { color: var(--ink-soft); font-style: italic; }
+  .red-flag-card p.scenario::before { content: "If — "; font-style: normal; color: var(--amber); font-weight: 600; }
+  .red-flag-card .impact { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-soft); margin: 0 0 14px; }
+  .red-flag-card .impact strong { color: var(--critical); }
+  .clause-box { background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; padding: 14px 16px; margin-top: 4px; }
+  .clause-verified { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--teal); margin: 0 0 8px; }
+  .clause-verified::before { content: "✓"; font-weight: 700; }
+  .clause-text { font-family: var(--font-mono); font-size: 13px; line-height: 1.55; color: var(--ink); margin: 0; white-space: pre-wrap; }
+  .clause-ref { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); margin: 8px 0 0; }
+  .band-table-wrap { background: var(--white); border: 1px solid var(--rule); border-radius: 3px; padding: 24px 26px; }
+  table.band-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.band-table th { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.03em; text-transform: uppercase; color: var(--ink-faint); text-align: left; padding: 0 8px 10px 0; border-bottom: 1px solid var(--rule); font-weight: 500; }
+  table.band-table td { padding: 12px 8px 12px 0; border-bottom: 1px solid var(--paper-deep); font-family: var(--font-mono); vertical-align: top; }
+  table.band-table tr:last-child td { border-bottom: none; }
+  table.band-table td.cap-label { font-weight: 500; color: var(--ink); font-family: var(--font-body); }
+  .band-insight { margin: 20px 0 0; padding-top: 18px; border-top: 1px dashed var(--rule); font-size: 14px; color: var(--ink-soft); }
+  .band-insight strong { color: var(--ink); }
+  .rights-list { display: flex; flex-direction: column; gap: 14px; }
+  .right-item { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--paper-deep); }
+  .right-item:last-child { border-bottom: none; }
+  .right-check { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--teal-wash); color: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin-top: 2px; }
+  .right-item p { margin: 0; font-size: 15px; }
+  .right-item p strong { color: var(--ink); }
+  section.cta { background: var(--teal); color: var(--paper); border-radius: 4px; padding: 36px 32px; text-align: center; }
+  section.cta h2 { font-family: var(--font-display); font-size: 24px; font-weight: 600; margin: 0 0 10px; color: var(--white); }
+  section.cta p { max-width: 46ch; margin: 0 auto 22px; color: #D9EAE6; font-size: 15px; }
+  .btn { display: inline-block; background: var(--white); color: var(--teal); font-family: var(--font-body); font-weight: 600; font-size: 15px; padding: 13px 26px; border-radius: 3px; border: none; cursor: pointer; text-decoration: none; }
+  .btn:hover { background: var(--paper); }
+  .fine { font-family: var(--font-mono); font-size: 11.5px; color: #B9DAD3; margin: 14px 0 0; }
+  footer.integrity { border-top: 1px solid var(--rule); margin-top: 48px; padding: 24px 0 40px; }
+  .pledge { font-family: var(--font-display); font-style: italic; font-size: 15px; color: var(--ink-soft); max-width: 60ch; margin: 0 0 16px; }
+  .footer-row { display: flex; flex-wrap: wrap; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
+  @media (max-width: 560px) { h1.verdict { font-size: 24px; } .flag-head { flex-direction: column; gap: 6px; } table.band-table { font-size: 12px; } }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <a class="wordmark" href="#">SOTERIA<span>.</span></a>
+    <span class="masthead-tag">Policy analysis · public record</span>
+  </div>
+</header>
+
+<main class="sheet">
+  <div class="wrap">
+
+    <section class="hero">
+      <p class="eyebrow teal">Signup-free analysis · Star Health and Allied Insurance · Senior Citizens Red Carpet</p>
+      <h1 class="verdict">Several independent caps apply to the same claim, all at once.</h1>
+      <p class="lede">This senior-citizen policy layers multiple cost-sharing mechanisms on top of each other — a mandatory co-pay, category-specific caps on what it pays doctors versus hospitals, and hard rupee ceilings on major-disease treatment — and none of them cancel each other out. It also has two real strengths worth knowing: a shorter-than-usual wait for pre-existing conditions, and a renewal guarantee with no upper age cutoff.</p>
+      <div class="meta-row">
+        <span><strong>UIN</strong> SHAHLIP26041V082526</span>
+        <span><strong>Policy type</strong> Senior citizen</span>
+        <span><strong>Wording version</strong> POL/SCRC/V.21/2025</span>
+        <span><strong>SI range</strong> ₹1L – ₹25L</span>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">What actually costs you money</h2>
+      <p class="section-sub">Five clauses from the policy wording. Two are severe enough on their own to change the outcome of a claim; the rest compound on top of them.</p>
+      <div class="red-flags">
+
+        <article class="red-flag-card critical">
+          <div class="flag-head">
+            <h3>Room rent cap, with proportionate deduction</h3>
+            <div class="tag-group"><span class="severity-tag critical">Critical</span></div>
+          </div>
+          <p>Room rent limits are tiered tightly by Sum Insured — as low as 1% of SI per day at the lowest tiers. Exceed your tier and the insurer proportionately cuts nearly every other line item on the bill, not just the room charge.</p>
+          <p class="scenario">you have a ₹10L policy with a ₹6,000/day room limit and take a ₹9,000 room, the insurer reduces your ₹2L surgical bill by roughly 33% because of the room breach alone.</p>
+          <p class="impact">Estimated exposure: <strong>25–40% of the total bill</strong>, out of pocket.</p>
+          <div class="clause-box">
+            <p class="clause-verified">Verified against the wording</p>
+            <p class="clause-text">Expenses relating to the hospitalization will be considered in proportion to the room rent limit stated in the policy or actuals whichever is less.</p>
+            <p class="clause-ref">Coverage &gt; Important Note</p>
+          </div>
+        </article>
+
+        <article class="red-flag-card critical">
+          <div class="flag-head">
+            <h3>Hard percentage caps on surgeon and theatre fees</h3>
+            <div class="tag-group"><span class="severity-tag critical">Critical</span><span class="scope-tag">Outside numbered taxonomy — flagged for financial impact</span></div>
+          </div>
+          <p>Independently of the room-rent clause, the policy caps what it will pay for doctors and surgeons at 25% of your Sum Insured, and everything else in the operating theatre — anaesthesia, medicines, implants, diagnostics — at 50%. These ceilings apply per hospitalization, regardless of what actually happened to your room.</p>
+          <p class="scenario">you have a ₹5L policy and a specialist surgeon charges ₹2L, the 25%-of-SI cap limits the payout to ₹1.25L, leaving ₹75,000 for you to cover — even though your total Sum Insured was never exhausted.</p>
+          <p class="impact">Estimated exposure: <strong>₹50,000–2L</strong>, if specialist fees or theatre costs run high.</p>
+          <div class="clause-box">
+            <p class="clause-verified">Verified against the wording</p>
+            <p class="clause-text">Surgeon, Anaesthetist, Medical Practitioner, Consultants, Specialist Fees subject to a maximum of 25% of the Sum Insured per hospitalization.</p>
+            <p class="clause-ref">Coverage &gt; Sections C &amp; D</p>
+          </div>
+        </article>
+
+        <article class="red-flag-card">
+          <div class="flag-head">
+            <h3>Mandatory 30% co-payment on every claim</h3>
+            <div class="tag-group"><span class="severity-tag">High</span></div>
+          </div>
+          <p>Not tied to entry age or an optional discount — this co-pay applies to all claims, for everyone on the policy, on top of whatever the room-rent and category caps have already deducted.</p>
+          <p class="scenario">your approved claim is ₹5L, the insurer pays 70% — ₹3.5L — and you cover the remaining ₹1.5L from your own savings, before any other cap is even applied.</p>
+          <p class="impact">Estimated exposure: <strong>30% of every approved claim</strong>, permanently.</p>
+          <div class="clause-box">
+            <p class="clause-verified">Verified against the wording</p>
+            <p class="clause-text">Co-payment: This policy is subject to co-payment of 30% for all claims.</p>
+            <p class="clause-ref">Coverage &gt; Section M</p>
+          </div>
+        </article>
+
+        <article class="red-flag-card">
+          <div class="flag-head">
+            <h3>Major-disease treatment capped well below real cost</h3>
+            <div class="tag-group"><span class="severity-tag">High</span></div>
+          </div>
+          <p>Cancer, cardiovascular disease, renal disease, and long-bone fractures each carry a hard rupee ceiling per policy period, scaled to Sum Insured but nowhere close to it — from ₹75,000 at the lowest tier to ₹5L at the highest.</p>
+          <p class="scenario">you have a ₹10L policy and cardiovascular treatment costs ₹6L, the disease-specific cap limits the payout to ₹2.75L, leaving ₹3.25L for you to cover.</p>
+          <p class="impact">Estimated exposure: <strong>₹2L–5L</strong>, for major-disease treatment.</p>
+          <div class="clause-box">
+            <p class="clause-verified">Verified against the wording</p>
+            <p class="clause-text">The expenses payable during the entire policy period for treatment of the following diseases / conditions... is limited to the amount mentioned in table below.</p>
+            <p class="clause-ref">Coverage &gt; Section J</p>
+          </div>
+        </article>
+
+        <article class="red-flag-card">
+          <div class="flag-head">
+            <h3>Post-hospitalization limited to 7% of the bill, then hard-capped</h3>
+            <div class="tag-group"><span class="severity-tag">High</span></div>
+          </div>
+          <p>Most policies cover 60–90 days of post-discharge costs in full. This one pays 7% of your hospitalization expenses — then applies a hard rupee ceiling on top of that percentage, as low as ₹5,000 at the lowest SI tiers.</p>
+          <p class="scenario">post-discharge physiotherapy and medication cost ₹40,000, the 7% calculation plus the hard cap limits your payout to around ₹7,000, leaving roughly ₹33,000 for you to cover.</p>
+          <p class="impact">Estimated exposure: <strong>₹30,000–50,000</strong>, for recovery-period care.</p>
+          <div class="clause-box">
+            <p class="clause-verified">Verified against the wording</p>
+            <p class="clause-text">Post Hospitalization medical expenses equivalent to 7% of the hospitalization expenses... subject to a maximum as per the table given below.</p>
+            <p class="clause-ref">Coverage &gt; Section G</p>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">How the caps stack</h2>
+      <p class="section-sub">Each of these applies independently — a single hospitalization can be reduced by several of them at once, not just the largest one.</p>
+      <div class="band-table-wrap">
+        <table class="band-table">
+          <thead><tr><th>What's capped</th><th>Limit</th></tr></thead>
+          <tbody>
+            <tr><td class="cap-label">Room rent (drives proportionate deduction)</td><td>1% of SI/day (₹1L–5L tier) up to ₹10,000/day (₹25L tier)</td></tr>
+            <tr><td class="cap-label">Surgeon, anaesthetist, consultant fees</td><td>25% of Sum Insured, per hospitalization</td></tr>
+            <tr><td class="cap-label">OT, medicines, implants, diagnostics</td><td>50% of Sum Insured, per hospitalization</td></tr>
+            <tr><td class="cap-label">Cataract</td><td>₹15,000 (₹1L tier) to ₹40,000 (₹25L tier), per eye per year</td></tr>
+            <tr><td class="cap-label">Cancer, cardiovascular, renal, long-bone fracture</td><td>₹75,000 (₹1L tier) to ₹5,00,000 (₹25L tier), per policy period</td></tr>
+            <tr><td class="cap-label">Post-hospitalization</td><td>7% of hospitalization cost, capped ₹5,000–₹10,000</td></tr>
+          </tbody>
+        </table>
+        <p class="band-insight"><strong>Why this matters:</strong> the 30% co-pay is calculated on top of whatever these other caps have already reduced — it isn't 30% of the original bill, it's 30% of what's left after room-rent and category caps have already been applied. The effective out-of-pocket share on a complex claim is routinely higher than any single clause suggests on its own.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">What this gets right</h2>
+      <p class="section-sub">For a policy this strict on payouts, two structural choices stand out as genuinely senior-friendly.</p>
+      <div class="rights-list">
+        <div class="right-item"><span class="right-check">✓</span><p><strong>Pre-existing disease wait is just 12 months</strong> — a third of the 36-month standard most policies use, which matters more for a senior-entry product than almost anything else on this page.</p></div>
+        <div class="right-item"><span class="right-check">✓</span><p><strong>Guaranteed lifetime renewal.</strong> Once accepted, there's no upper age cutoff that forces you off the policy later.</p></div>
+        <div class="right-item"><span class="right-check">✓</span><p><strong>No mandatory aggregate deductible</strong> — unlike a top-up plan, this pays from the first rupee, subject to the caps above.</p></div>
+        <div class="right-item"><span class="right-check">✓</span><p><strong>Day-care isn't restricted to a named list.</strong> "All day care procedures" are covered, not a fixed enumerated set.</p></div>
+        <div class="right-item"><span class="right-check">✓</span><p><strong>No benefit-forfeiture clauses.</strong> Nothing in the base policy permanently cancels a cover after a single use.</p></div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <h2>Have this exact policy?</h2>
+      <p>This analysis is built from the published policy wording. Your actual schedule may differ — upload your own document and see exactly which of these clauses apply to you.</p>
+      <button class="btn" onclick="typeof sendPrompt === 'function' && sendPrompt('I want to check my own health insurance policy against these flags')">Check my policy free →</button>
+      <p class="fine">No signup to see your first analysis. We can't read what we don't keep.</p>
+    </section>
+
+  </div>
+</main>
+
+<footer class="integrity">
+  <div class="wrap">
+    <p class="pledge">"Every player selling you health insurance is paid by the insurer. Soteria never earns a commission — which is why we can tell you what a policy will actually do."</p>
+    <div class="footer-row">
+      <span>Analysis of public wording SHAHLIP26041V082526</span>
+      <span>Not affiliated with Star Health</span>
+      <span>Not advice to buy or avoid</span>
+      <span>Verbatim clauses quoted for reference</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supreme Enhance — Policy Analysis | Soteria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FAF7F0;
+    --paper-deep: #F1ECDE;
+    --ink: #1C1B19;
+    --ink-soft: #58554D;
+    --ink-faint: #8B877C;
+    --teal: #0F6D5C;
+    --teal-wash: #E4EFEC;
+    --amber: #AE5A1B;
+    --amber-wash: #F6E7D8;
+    --critical: #8C2F1E;
+    --critical-wash: #F5DFD8;
+    --rule: #DDD5C4;
+    --white: #FFFFFF;
+    --font-display: 'Newsreader', Georgia, serif;
+    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+    --font-body: 'Inter', -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.6; }
+  a { color: var(--teal); }
+  a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+  header.masthead { border-bottom: 1px solid var(--rule); padding: 22px 0; }
+  header.masthead .wrap { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .wordmark { font-family: var(--font-display); font-weight: 600; font-size: 22px; letter-spacing: 0.01em; color: var(--ink); text-decoration: none; }
+  .wordmark span { color: var(--teal); }
+  .masthead-tag { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
+  main.sheet { padding: 48px 0 24px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 10px; }
+  .eyebrow.teal { color: var(--teal); }
+  section.hero { padding-bottom: 36px; border-bottom: 1px solid var(--rule); margin-bottom: 40px; animation: rise 0.5s ease-out both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  h1.verdict { font-family: var(--font-display); font-size: 32px; line-height: 1.28; font-weight: 600; margin: 0 0 18px; max-width: 24ch; }
+  p.lede { font-size: 17px; color: var(--ink-soft); max-width: 64ch; margin: 0 0 22px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 18px; font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-faint); }
+  .meta-row strong { color: var(--ink-soft); font-weight: 500; }
+  h2.section-title { font-family: var(--font-display); font-size: 22px; font-weight: 600; margin: 0 0 6px; }
+  p.section-sub { font-size: 14.5px; color: var(--ink-soft); margin: 0 0 24px; max-width: 58ch; }
+  section { margin-bottom: 48px; }
+  .red-flags { display: flex; flex-direction: column; gap: 20px; }
+  .red-flag-card { background: var(--white); border: 1px solid var(--rule); border-left: 3px solid var(--amber); border-radius: 3px; padding: 22px 24px; }
+  .red-flag-card.critical { border-left-color: var(--critical); }
+  .flag-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .tag-group { display: flex; gap: 8px; align-items: center; }
+  .severity-tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; background: var(--amber-wash); color: var(--amber); white-space: nowrap; }
+  .severity-tag.critical { background: var(--critical-wash); color: var(--critical); }
+  .optional-tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; background: var(--paper-deep); color: var(--ink-faint); border: 1px solid var(--rule); white-space: nowrap; }
+  .red-flag-card h3 { font-family: var(--font-display); font-size: 19px; font-weight: 600; margin: 0 0 12px; }
+  .red-flag-card p { margin: 0 0 12px; font-size: 15px; }
+  .red-flag-card p.scenario { color: var(--ink-soft); font-style: italic; }
+  .red-flag-card p.scenario::before { content: "If — "; font-style: normal; color: var(--amber); font-weight: 600; }
+  .red-flag-card .impact { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-soft); margin: 0 0 14px; }
+  .red-flag-card .impact strong { color: var(--critical); }
+  .clause-box { background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; padding: 14px 16px; margin-top: 4px; }
+  .clause-verified { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--teal); margin: 0 0 8px; }
+  .clause-verified::before { content: "✓"; font-weight: 700; }
+  .clause-text { font-family: var(--font-mono); font-size: 13px; line-height: 1.55; color: var(--ink); margin: 0; white-space: pre-wrap; }
+  .clause-ref { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); margin: 8px 0 0; }
+  .band-table-wrap { background: var(--white); border: 1px solid var(--rule); border-radius: 3px; padding: 24px 26px; }
+  table.band-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.band-table th { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.03em; text-transform: uppercase; color: var(--ink-faint); text-align: left; padding: 0 8px 10px 0; border-bottom: 1px solid var(--rule); font-weight: 500; }
+  table.band-table td { padding: 12px 8px 12px 0; border-bottom: 1px solid var(--paper-deep); font-family: var(--font-mono); }
+  table.band-table tr:last-child td { border-bottom: none; }
+  table.band-table td.si-tier, table.band-table td.event-label { font-weight: 500; color: var(--ink); font-family: var(--font-body); }
+  table.band-table td.you-pay { color: var(--amber); font-weight: 500; }
+  table.band-table td.insurer-pays { color: var(--teal); font-weight: 500; }
+  .band-insight { margin: 20px 0 0; padding-top: 18px; border-top: 1px dashed var(--rule); font-size: 14px; color: var(--ink-soft); }
+  .band-insight strong { color: var(--ink); }
+  .rights-list { display: flex; flex-direction: column; gap: 14px; }
+  .right-item { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--paper-deep); }
+  .right-item:last-child { border-bottom: none; }
+  .right-check { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--teal-wash); color: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin-top: 2px; }
+  .right-item p { margin: 0; font-size: 15px; }
+  .right-item p strong { color: var(--ink); }
+  section.cta { background: var(--teal); color: var(--paper); border-radius: 4px; padding: 36px 32px; text-align: center; }
+  section.cta h2 { font-family: var(--font-display); font-size: 24px; font-weight: 600; margin: 0 0 10px; color: var(--white); }
+  section.cta p { max-width: 46ch; margin: 0 auto 22px; color: #D9EAE6; font-size: 15px; }
+  .btn { display: inline-block; background: var(--white); color: var(--teal); font-family: var(--font-body); font-weight: 600; font-size: 15px; padding: 13px 26px; border-radius: 3px; border: none; cursor: pointer; text-decoration: none; }
+  .btn:hover { background: var(--paper); }
+  .fine { font-family: var(--font-mono); font-size: 11.5px; color: #B9DAD3; margin: 14px 0 0; }
+  footer.integrity { border-top: 1px solid var(--rule); margin-top: 48px; padding: 24px 0 40px; }
+  .pledge { font-family: var(--font-display); font-style: italic; font-size: 15px; color: var(--ink-soft); max-width: 60ch; margin: 0 0 16px; }
+  .footer-row { display: flex; flex-wrap: wrap; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
+  @media (max-width: 560px) { h1.verdict { font-size: 26px; } .flag-head { flex-direction: column; gap: 6px; } table.band-table { font-size: 12.5px; } }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <a class="wordmark" href="#">SOTERIA<span>.</span></a>
+    <span class="masthead-tag">Policy analysis · public record</span>
+  </div>
+</header>
+
+<main class="sheet">
+  <div class="wrap">
+
+    <section class="hero">
+      <p class="eyebrow teal">Signup-free analysis · Care Health Insurance · Supreme Enhance</p>
+      <h1 class="verdict">A strong top-up — but it pays nothing until you clear the deductible.</h1>
+      <p class="lede">Supreme Enhance is a super top-up plan, not a standalone health policy. Once your cumulative claims for the year cross your chosen deductible, the coverage underneath is genuinely broad: unlimited restoration that covers even the same illness twice, no ICU cap, and modern treatments paid up to your full Sum Insured. The part worth understanding clearly, before you buy, is exactly how that deductible clears.</p>
+      <div class="meta-row">
+        <span><strong>UIN</strong> CHIHLIP25036V012425</span>
+        <span><strong>Policy type</strong> Super top-up</span>
+        <span><strong>Wording version</strong> Verve 25/AS · Nov 2025</span>
+        <span><strong>SI range</strong> ₹5L – ₹6Cr</span>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">What actually costs you money</h2>
+      <p class="section-sub">One clause is how this type of policy is designed to work. The other two are worth knowing before you're in a hospital bed.</p>
+      <div class="red-flags">
+
+        <article class="red-flag-card">
+          <div class="flag-head">
+            <h3>The aggregate annual deductible — this policy's core mechanic</h3>
+            <div class="tag-group"><span class="severity-tag">High</span></div>
+          </div>
+          <p>This is a top-up policy: it doesn't pay from the first rupee. Your approved medical bills for the year must cumulatively cross your chosen deductible — anywhere from ₹1L to ₹25L — before Supreme Enhance contributes anything. Every claim in the policy year counts toward that same running total.</p>
+          <p class="scenario">your deductible is ₹5L and you have a ₹3L claim, you pay the full ₹3L yourself; a second ₹3L claim later the same year only needs ₹2L more to clear the deductible, so the insurer pays the remaining ₹1L.</p>
+          <p class="impact">You are responsible for <strong>100% of bills</strong> until the deductible is cumulatively cleared for the year.</p>
+          <div class="clause-box">
+            <p class="clause-verified">Verified against the wording</p>
+            <p class="clause-text">Deductible amount (as opted) applicable on aggregate basis on claims in a policy year. (Plan A)</p>
+            <p class="clause-ref">Customer Information Sheet &gt; Financial limits of coverage</p>
+          </div>
+        </article>
+
+        <article class="red-flag-card">
+          <div class="flag-head">
+            <h3>Room rent cap, with proportionate deduction</h3>
+            <div class="tag-group"><span class="severity-tag">High</span></div>
+          </div>
+          <p>The base plan restricts you to a Single Private AC room. Choose anything above that category and the insurer proportionately cuts payouts across nearly every other line item on the bill, not just the room charge.</p>
+          <p class="scenario">you upgrade to a suite and the insurer pays the room up to the Private AC limit, but also cuts your ₹2L surgeon bill by 30–40% because of the same room breach.</p>
+          <p class="impact">Estimated exposure: <strong>20–50% of the total bill</strong>, depending on the room-rate gap.</p>
+          <div class="clause-box">
+            <p class="clause-verified">Verified against the wording</p>
+            <p class="clause-text">If a room accommodation has been opted for where the Room Rent or Room Category is higher than the eligible limit as applicable for that Insured Person as specified, then, the Associate Medical Expenses payable shall be pro-rated as per the applicable limits.</p>
+            <p class="clause-ref">General Conditions &gt; Claim Assessment 6.6</p>
+          </div>
+        </article>
+
+        <article class="red-flag-card">
+          <div class="flag-head">
+            <h3>Modern-treatment sub-limit — only if you opt in for the discount</h3>
+            <div class="tag-group"><span class="severity-tag">High</span><span class="optional-tag">Opt-in only</span></div>
+          </div>
+          <p>The base policy covers advanced treatments (robotic surgery, stem cell therapy, and similar) up to your full Sum Insured. If you choose the "Modification on Advance Technology methods" add-on to lower your premium, you introduce a hard cap — 30% or 50% of SI — on exactly those treatments.</p>
+          <p class="scenario">you have a ₹20L policy, opted for the discount, and need robotic surgery costing ₹12L, a 50%-of-SI cap limits payout to ₹10L, leaving ₹2L for you to cover.</p>
+          <p class="impact">Estimated exposure: <strong>₹1L–5L</strong>, only if this optional cover was selected and an advanced treatment is needed.</p>
+          <div class="clause-box">
+            <p class="clause-verified">Verified against the wording</p>
+            <p class="clause-text">If this Optional Benefit is opted, then there shall be sub-limit on Advance Technology Method treatments up to the limit and our liability shall be limited to such extent... Coverage shall be limited to 30%/50% of SI.</p>
+            <p class="clause-ref">Optional Benefits &gt; Modification of Advance Technology Methods</p>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">How the deductible actually clears</h2>
+      <p class="section-sub">A worked example at a ₹5L deductible, using two claims in the same policy year.</p>
+      <div class="band-table-wrap">
+        <table class="band-table">
+          <thead>
+            <tr><th>Event</th><th>Bill</th><th>You pay</th><th>Insurer pays</th><th>Deductible remaining</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="event-label">Claim 1</td><td>₹3,00,000</td><td class="you-pay">₹3,00,000</td><td class="insurer-pays">₹0</td><td>₹2,00,000</td></tr>
+            <tr><td class="event-label">Claim 2 (same year)</td><td>₹3,00,000</td><td class="you-pay">₹2,00,000</td><td class="insurer-pays">₹1,00,000</td><td>₹0</td></tr>
+          </tbody>
+        </table>
+        <p class="band-insight"><strong>Note:</strong> the deductible is annual — it resets each policy year. A large bill that lands close to your renewal date could mean starting the count over again, even if you'd nearly cleared it the year before.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">What this gets right</h2>
+      <p class="section-sub">Once the deductible clears, the coverage underneath is unusually broad for this price tier.</p>
+      <div class="rights-list">
+        <div class="right-item"><span class="right-check">✓</span><p><strong>No mandatory co-pay.</strong> Nothing reduces your payout by a fixed percentage once the deductible is cleared.</p></div>
+        <div class="right-item"><span class="right-check">✓</span><p><strong>No ICU cap at all.</strong> Intensive care is covered with no limit, base plan.</p></div>
+        <div class="right-item"><span class="right-check">✓</span><p><strong>Modern treatments covered up to full Sum Insured</strong> in the base plan — unless you opt into the discount that caps them.</p></div>
+        <div class="right-item"><span class="right-check">✓</span><p><strong>Unlimited automatic restoration</strong>, and unlike most policies, it covers the <em>same</em> illness again, not just unrelated ones.</p></div>
+        <div class="right-item"><span class="right-check">✓</span><p><strong>Loyalty bonus doesn't shrink after a claim</strong> — 10% of SI per year, up to 100%, regardless of claims history.</p></div>
+        <div class="right-item"><span class="right-check">✓</span><p><strong>Standard PED wait, with a paid option to shorten it</strong> — 36 months by default, reducible to 1–2 years via an add-on.</p></div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <h2>Have this exact policy?</h2>
+      <p>This analysis is built from the published policy wording. Your actual schedule may differ — upload your own document and see exactly which of these clauses apply to you.</p>
+      <button class="btn" onclick="typeof sendPrompt === 'function' && sendPrompt('I want to check my own health insurance policy against these flags')">Check my policy free →</button>
+      <p class="fine">No signup to see your first analysis. We can't read what we don't keep.</p>
+    </section>
+
+  </div>
+</main>
+
+<footer class="integrity">
+  <div class="wrap">
+    <p class="pledge">"Every player selling you health insurance is paid by the insurer. Soteria never earns a commission — which is why we can tell you what a policy will actually do."</p>
+    <div class="footer-row">
+      <span>Analysis of public wording CHIHLIP25036V012425</span>
+      <span>Not affiliated with Care Health Insurance</span>
+      <span>Not advice to buy or avoid</span>
+      <span>Verbatim clauses quoted for reference</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Critical Illness Insurance — Policy Analysis | Soteria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FAF7F0; --paper-deep: #F1ECDE; --ink: #1C1B19; --ink-soft: #58554D; --ink-faint: #8B877C;
+    --teal: #0F6D5C; --teal-wash: #E4EFEC; --amber: #AE5A1B; --amber-wash: #F6E7D8;
+    --critical: #8C2F1E; --critical-wash: #F5DFD8; --rule: #DDD5C4; --white: #FFFFFF;
+    --font-display: 'Newsreader', Georgia, serif; --font-mono: 'IBM Plex Mono', 'Courier New', monospace; --font-body: 'Inter', -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.6; }
+  a { color: var(--teal); }
+  a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+  header.masthead { border-bottom: 1px solid var(--rule); padding: 22px 0; }
+  header.masthead .wrap { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .wordmark { font-family: var(--font-display); font-weight: 600; font-size: 22px; letter-spacing: 0.01em; color: var(--ink); text-decoration: none; }
+  .wordmark span { color: var(--teal); }
+  .masthead-tag { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
+  main.sheet { padding: 48px 0 24px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 10px; }
+  .eyebrow.teal { color: var(--teal); }
+  section.hero { padding-bottom: 36px; border-bottom: 1px solid var(--rule); margin-bottom: 40px; animation: rise 0.5s ease-out both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  h1.verdict { font-family: var(--font-display); font-size: 30px; line-height: 1.28; font-weight: 600; margin: 0 0 18px; max-width: 25ch; }
+  p.lede { font-size: 17px; color: var(--ink-soft); max-width: 64ch; margin: 0 0 22px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 18px; font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-faint); }
+  .meta-row strong { color: var(--ink-soft); font-weight: 500; }
+  .product-type-note { background: var(--paper-deep); border: 1px dashed var(--rule); border-radius: 3px; padding: 14px 18px; margin-top: 20px; font-size: 13.5px; color: var(--ink-soft); }
+  .product-type-note strong { color: var(--ink); }
+  h2.section-title { font-family: var(--font-display); font-size: 22px; font-weight: 600; margin: 0 0 6px; }
+  p.section-sub { font-size: 14.5px; color: var(--ink-soft); margin: 0 0 24px; max-width: 58ch; }
+  section { margin-bottom: 48px; }
+  .red-flags { display: flex; flex-direction: column; gap: 20px; }
+  .red-flag-card { background: var(--white); border: 1px solid var(--rule); border-left: 3px solid var(--amber); border-radius: 3px; padding: 22px 24px; }
+  .red-flag-card.critical { border-left-color: var(--critical); }
+  .flag-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .tag-group { display: flex; gap: 8px; align-items: center; }
+  .severity-tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; background: var(--amber-wash); color: var(--amber); white-space: nowrap; }
+  .severity-tag.critical { background: var(--critical-wash); color: var(--critical); }
+  .severity-tag.medium { background: var(--paper-deep); color: var(--ink-soft); }
+  .scope-tag { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.03em; padding: 3px 8px; border-radius: 2px; background: var(--paper-deep); color: var(--ink-faint); border: 1px solid var(--rule); white-space: nowrap; }
+  .red-flag-card h3 { font-family: var(--font-display); font-size: 19px; font-weight: 600; margin: 0 0 12px; }
+  .red-flag-card p { margin: 0 0 12px; font-size: 15px; }
+  .red-flag-card p.scenario { color: var(--ink-soft); font-style: italic; }
+  .red-flag-card p.scenario::before { content: "If — "; font-style: normal; color: var(--amber); font-weight: 600; }
+  .red-flag-card .impact { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-soft); margin: 0 0 14px; }
+  .red-flag-card .impact strong { color: var(--critical); }
+  .clause-box { background: var(--paper-deep); border: 1px solid var(--rule); border-radius: 3px; padding: 14px 16px; margin-top: 4px; }
+  .clause-verified { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--teal); margin: 0 0 8px; }
+  .clause-verified::before { content: "✓"; font-weight: 700; }
+  .clause-text { font-family: var(--font-mono); font-size: 13px; line-height: 1.55; color: var(--ink); margin: 0; white-space: pre-wrap; }
+  .clause-ref { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); margin: 8px 0 0; }
+  .gate-sequence { display: flex; flex-direction: column; gap: 0; background: var(--white); border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; }
+  .gate-step { display: flex; gap: 18px; padding: 20px 24px; border-bottom: 1px solid var(--paper-deep); }
+  .gate-step:last-child { border-bottom: none; }
+  .gate-number { flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; background: var(--teal-wash); color: var(--teal); font-family: var(--font-mono); font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  .gate-content h4 { margin: 0 0 4px; font-family: var(--font-display); font-size: 16.5px; font-weight: 600; }
+  .gate-content p { margin: 0; font-size: 14px; color: var(--ink-soft); }
+  .gate-and { text-align: center; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--ink-faint); padding: 6px 0; background: var(--paper-deep); }
+  .gate-outcome { margin-top: 16px; padding: 16px 20px; background: var(--critical-wash); border-radius: 3px; font-size: 14px; color: var(--critical); }
+  .gate-outcome strong { font-weight: 600; }
+  .rights-list { display: flex; flex-direction: column; gap: 14px; }
+  .right-item { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--paper-deep); }
+  .right-item:last-child { border-bottom: none; }
+  .right-check { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--teal-wash); color: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin-top: 2px; }
+  .right-item p { margin: 0; font-size: 15px; }
+  .right-item p strong { color: var(--ink); }
+  section.cta { background: var(--teal); color: var(--paper); border-radius: 4px; padding: 36px 32px; text-align: center; }
+  section.cta h2 { font-family: var(--font-display); font-size: 24px; font-weight: 600; margin: 0 0 10px; color: var(--white); }
+  section.cta p { max-width: 46ch; margin: 0 auto 22px; color: #D9EAE6; font-size: 15px; }
+  .btn { display: inline-block; background: var(--white); color: var(--teal); font-family: var(--font-body); font-weight: 600; font-size: 15px; padding: 13px 26px; border-radius: 3px; border: none; cursor: pointer; text-decoration: none; }
+  .btn:hover { background: var(--paper); }
+  .fine { font-family: var(--font-mono); font-size: 11.5px; color: #B9DAD3; margin: 14px 0 0; }
+  footer.integrity { border-top: 1px solid var(--rule); margin-top: 48px; padding: 24px 0 40px; }
+  .pledge { font-family: var(--font-display); font-style: italic; font-size: 15px; color: var(--ink-soft); max-width: 60ch; margin: 0 0 16px; }
+  .footer-row { display: flex; flex-wrap: wrap; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
+  @media (max-width: 560px) { h1.verdict { font-size: 24px; } .flag-head { flex-direction: column; gap: 6px; } .gate-step { padding: 16px 18px; gap: 12px; } }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <a class="wordmark" href="#">SOTERIA<span>.</span></a>
+    <span class="masthead-tag">Policy analysis · public record</span>
+  </div>
+</header>
+
+<main class="sheet">
+  <div class="wrap">
+
+    <section class="hero">
+      <p class="eyebrow teal">Signup-free analysis · HDFC ERGO General Insurance · Critical Illness Insurance</p>
+      <h1 class="verdict">A one-time payout, with four separate conditions between you and receiving it.</h1>
+      <p class="lede">This is not a hospitalization policy — it pays a single lump sum if you're diagnosed with a listed critical illness, and nothing reduces that amount once you qualify. But qualifying isn't automatic. Diagnosis alone isn't enough: you also need to have waited out the initial period, survived a minimum number of days after diagnosis, and been under the age cutoff when it happened.</p>
+      <div class="meta-row">
+        <span><strong>UIN</strong> not stated in published wording</span>
+        <span><strong>Policy type</strong> Individual, fixed-benefit critical illness</span>
+        <span><strong>Policy term</strong> 1 or 2 years</span>
+        <span><strong>Sum Insured</strong> set per policy schedule</span>
+      </div>
+      <div class="product-type-note">
+        <strong>Different product, different risk shape.</strong> Every other page in this series analyzes an indemnity policy — one that reimburses a variable hospital bill, where caps and co-pays reduce <em>how much</em> you get. This is a fixed-benefit policy: once you qualify, you get the full Sum Insured, undiminished. The real risk here is entirely about whether you qualify at all.
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">What can cost you the entire payout</h2>
+      <p class="section-sub">Nothing here shaves a percentage off your claim. Each of these determines whether you receive anything at all.</p>
+      <div class="red-flags">
+
+        <article class="red-flag-card critical">
+          <div class="flag-head">
+            <h3>Coverage ends at 66 or 67 — right as your risk peaks</h3>
+            <div class="tag-group"><span class="severity-tag critical">Critical</span></div>
+          </div>
+          <p>This policy is not lifetime renewable. There's a hard age cutoff, and once you age out, the insurer stops covering you entirely — during the exact years critical illness risk rises fastest.</p>
+          <p class="scenario">you pay premiums for 15 years and the insurer doesn't renew at 67, then at 68 you suffer a stroke, you receive nothing — not a reduced payout, nothing.</p>
+          <p class="impact">At stake: <strong>the entire Sum Insured</strong>, forfeited by age alone, regardless of how long you paid premiums.</p>
+          <div class="clause-box">
+            <p class="clause-verified">Verified against the wording</p>
+            <p class="clause-text">We will not cover any person above the Age 66 for an annual policy and 67 for a 2 year policy.</p>
+            <p class="clause-ref">General Conditions &gt; Insured Person</p>
+          </div>
+        </article>
+
+        <article class="red-flag-card critical">
+          <div class="flag-head">
+            <h3>The policy terminates the moment it pays you once</h3>
+            <div class="tag-group"><span class="severity-tag critical">Critical</span></div>
+          </div>
+          <p>This is a single-use policy. The instant a claim is paid, the policy ends permanently for that person — there is no coverage remaining for any future critical illness, ever.</p>
+          <p class="scenario">you claim for early-stage cancer and receive the payout, the policy terminates immediately, and a heart attack three years later has no coverage behind it at all.</p>
+          <p class="impact">At stake: <strong>all future critical-illness coverage</strong>, permanently, after one paid claim.</p>
+          <div class="clause-box">
+            <p class="clause-verified">Verified against the wording</p>
+            <p class="clause-text">The Policy shall automatically terminate upon the occurrence of Critical Illness, without prejudice of Our obligation to make payment, with reference to that Insured Person.</p>
+            <p class="clause-ref">General Conditions &gt; Termination</p>
+          </div>
+        </article>
+
+        <article class="red-flag-card">
+          <div class="flag-head">
+            <h3>You must survive 15 or 30 days after diagnosis to get paid</h3>
+            <div class="tag-group"><span class="severity-tag">High</span><span class="scope-tag">Outside numbered taxonomy — flagged for financial impact</span></div>
+          </div>
+          <p>A confirmed, covered diagnosis is not enough on its own. The policy only pays if the insured person survives a specified number of days — 15 or 30, depending on the plan — after that diagnosis. If the illness proves rapidly fatal, the payout doesn't happen.</p>
+          <p class="scenario">a massive heart attack (a covered event) leads to death in the ICU on day 12, the family receives nothing, because the survival threshold was 15 days.</p>
+          <p class="impact">At stake: <strong>the entire Sum Insured</strong>, forfeited if death occurs before the survival window closes.</p>
+          <div class="clause-box">
+            <p class="clause-verified">Verified against the wording</p>
+            <p class="clause-text">The Insured Person survives for at least 15/30 days following such diagnosis.</p>
+            <p class="clause-ref">Section 1. Benefits</p>
+          </div>
+        </article>
+
+        <article class="red-flag-card">
+          <div class="flag-head">
+            <h3>90-day initial wait — three times the usual length</h3>
+            <div class="tag-group"><span class="severity-tag medium">Medium</span><span class="scope-tag">Outside numbered taxonomy — flagged for financial impact</span></div>
+          </div>
+          <p>Most indemnity health policies use a 30-day initial wait. This one uses 90 — a full quarter with no coverage at all, unless you're renewing continuously from a prior policy year without a break.</p>
+          <p class="scenario">you're diagnosed with a covered illness 70 days after buying the policy, the claim is rejected outright, since it falls inside the 90-day window.</p>
+          <p class="impact">At stake: <strong>any diagnosis in the first 3 months</strong>, denied entirely, no exceptions for severity.</p>
+          <div class="clause-box">
+            <p class="clause-verified">Verified against the wording</p>
+            <p class="clause-text">A waiting period of 90 days will apply to all claims unless the Insured Person has been insured under this policy continuously and without any break in the previous Policy Year.</p>
+            <p class="clause-ref">Section 2. Exclusions</p>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">What has to go right for this policy to pay out</h2>
+      <p class="section-sub">All four conditions must hold. Miss any one, and the payout is zero — this is a genuine sequence, not a checklist for convenience.</p>
+      <div class="gate-sequence">
+        <div class="gate-step">
+          <span class="gate-number">1</span>
+          <div class="gate-content">
+            <h4>Diagnosed with a listed critical illness</h4>
+            <p>The condition must match one of the illnesses defined in the policy's benefit schedule.</p>
+          </div>
+        </div>
+        <div class="gate-and">AND</div>
+        <div class="gate-step">
+          <span class="gate-number">2</span>
+          <div class="gate-content">
+            <h4>At least 90 days have passed since the policy started</h4>
+            <p>Unless you're continuously renewing without a break from a prior policy year.</p>
+          </div>
+        </div>
+        <div class="gate-and">AND</div>
+        <div class="gate-step">
+          <span class="gate-number">3</span>
+          <div class="gate-content">
+            <h4>You survive 15 or 30 days after diagnosis</h4>
+            <p>Per the survival period stated on your specific plan.</p>
+          </div>
+        </div>
+        <div class="gate-and">AND</div>
+        <div class="gate-step">
+          <span class="gate-number">4</span>
+          <div class="gate-content">
+            <h4>You were under 66 (annual) or 67 (2-year) at the time</h4>
+            <p>The hard age cutoff applies at the point of the insured event, not just at renewal.</p>
+          </div>
+        </div>
+      </div>
+      <div class="gate-outcome"><strong>Miss any one gate, and the outcome is the same:</strong> zero payout, regardless of how the other three conditions were met.</div>
+    </section>
+
+    <section>
+      <h2 class="section-title">What this gets right — for what it is</h2>
+      <p class="section-sub">Most fields that would show up as "strengths" on an indemnity policy in this series are simply not applicable here — that's the product type, not a feature. Two things are genuine, earned positives.</p>
+      <div class="rights-list">
+        <div class="right-item"><span class="right-check">✓</span><p><strong>Once you clear all four gates, the payout is the full Sum Insured — undiminished.</strong> No room-rent link, no co-pay, no proportional deduction reduces the amount itself. Unlike every indemnity policy in this series, nothing here shrinks your payout once you qualify.</p></div>
+        <div class="right-item"><span class="right-check">✓</span><p><strong>Continuous renewal keeps the 90-day clock from resetting.</strong> The wording explicitly exempts policyholders who renew without a break, so maintaining the policy protects you from re-triggering the initial wait.</p></div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <h2>Have this exact policy?</h2>
+      <p>This analysis is built from the published policy wording. Your actual schedule may differ — upload your own document and see exactly which of these clauses apply to you.</p>
+      <button class="btn" onclick="typeof sendPrompt === 'function' && sendPrompt('I want to check my own health insurance policy against these flags')">Check my policy free →</button>
+      <p class="fine">No signup to see your first analysis. We can't read what we don't keep.</p>
+    </section>
+
+  </div>
+</main>
+
+<footer class="integrity">
+  <div class="wrap">
+    <p class="pledge">"Every player selling you health insurance is paid by the insurer. Soteria never earns a commission — which is why we can tell you what a policy will actually do."</p>
+    <div class="footer-row">
+      <span>Analysis of published wording · UIN not stated in source document</span>
+      <span>Not affiliated with HDFC ERGO</span>
+      <span>Not advice to buy or avoid</span>
+      <span>Verbatim clauses quoted for reference</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
