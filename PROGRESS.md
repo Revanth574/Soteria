@@ -389,9 +389,11 @@ Next action:
 
 ## 2026-07-08 - H1-6 HTTP Layer + Claude Extractor + Certified-Record Design System
 
-Status: built and locally tested. Not merged.
+Status: complete - merged to `main`.
 
 Branch: `feature/h1-6-http-real-extractor-design-system`
+
+Merge commit: `a3fa0c9`
 
 Framework choice:
 - FastAPI was used for the HTTP layer. The app is built through an injectable
@@ -505,4 +507,88 @@ Self-audit against handoff prohibitions:
   admin UI, or H2 feature work added.
 
 Next action:
-- Architect/security review and ratification of H1-6. H1-7 not started.
+- H1-7a Production VM deployment. Repo-side runbook/code built; live deployment
+  verification blocked in this local environment because `gcloud` is not
+  installed.
+
+## 2026-07-09 - H1-7a Production VM Deployment
+
+Status: repo-side deployment assets built and locally tested. Live VM deployment
+not executed from this environment.
+
+Branch: `feature/h1-7a-production-vm-deploy`
+
+Implemented:
+- Added shallow `GET /health` to the FastAPI app. This is the one app-code
+  change in H1-7a; it returns `{"status": "ok"}` without DB, storage, or
+  extractor dependency.
+- Added a focused health test proving the endpoint remains live even when the
+  injected extractor would fail.
+- Added `DEPLOY.md` at repo root with exact VM commands for:
+  - Ubuntu/Python confirmation,
+  - official Caddy apt repository installation,
+  - dedicated non-root `soteria` system user,
+  - `/opt/soteria` code checkout,
+  - `/opt/soteria/backend/.venv` dependency install from `pyproject.toml`,
+  - `/opt/soteria/backend/.env` production environment file,
+  - `/var/lib/soteria` persistent SQLite/session-artifact storage,
+  - systemd service install and restart,
+  - Caddy reverse proxy install and reload,
+  - TLS/health/static-page/upload verification commands,
+  - redeploy and log-check commands.
+- Added `infra/soteria.service` production systemd unit template:
+  - runs as `soteria`,
+  - `WorkingDirectory=/opt/soteria/backend`,
+  - `EnvironmentFile=/opt/soteria/backend/.env`,
+  - binds uvicorn to `127.0.0.1:8000`,
+  - uses `Restart=on-failure`.
+- Added `infra/Caddyfile.production`:
+  - routes `soteria.co.in` and `www.soteria.co.in` to `127.0.0.1:8000`,
+  - serves `/policies/*` from `/var/www/soteria-public-pages`,
+  - keeps Python out of the static public-page path,
+  - relies on Caddy's automatic HTTPS/HTTP-to-HTTPS behavior.
+
+Local validation:
+- `python -m pytest backend/tests/test_http_app.py -q` passes with `8 passed`.
+- `python -m pytest backend/tests -q` passes with `53 passed`.
+- `python -m compileall -q backend/src` passes.
+
+Live deployment status:
+- Not executed from this Codex environment. `gcloud` is not installed locally:
+  `gcloud : The term 'gcloud' is not recognized...`.
+- Therefore no live `systemctl`, HTTPS `curl`, public-page `curl`, or real
+  upload smoke-test output exists yet.
+- Anthropic API cost incurred by live H1-7a smoke test: not incurred from this
+  environment, because the live smoke test was not run.
+
+Deployment inputs still required on the VM:
+- Real `ANTHROPIC_API_KEY` must be written manually into
+  `/opt/soteria/backend/.env`; it is not committed.
+- Real `ANTHROPIC_MODEL` must be set in the same environment file.
+- `prompts/system.md` is not present in the repo and was not created because
+  prompt content is Revanth-owned. The runbook includes the exact command to
+  install that file on the VM before service start.
+- No committed static public HTML pages currently exist under `public/`,
+  `policies/`, or another static HTML output directory. The production Caddy
+  route is ready, but `/policies/...` will return a static 404 until those pages
+  are placed under `/var/www/soteria-public-pages/policies`.
+
+Known gaps:
+- Email/magic-link delivery remains a dev stub in production until H1-7b.
+  Signup in production currently has no way to deliver a link to a real user's
+  inbox.
+- Live VM deployment and verification remain to be executed from a machine with
+  `gcloud` access or directly inside the GCP Console SSH session.
+- Static public red-flag pages need committed/generated HTML artifacts or a
+  manual copy step before the `/policies/...` verification can pass.
+
+Self-audit against handoff prohibitions:
+- Prompt content not edited.
+- `docs/` and `fixtures/` not touched.
+- No email delivery or magic-link sending added.
+- No public-page hosting implementation beyond Caddy static-file routing.
+- No H2 feature work started.
+
+Next action:
+- Run `DEPLOY.md` on the production VM, paste actual command outputs, record
+  the live smoke-test Anthropic cost, then ratify/merge H1-7a.

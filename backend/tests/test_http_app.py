@@ -179,6 +179,15 @@ def test_xss_survives_http_layer_as_escaped_text(tmp_path: Path) -> None:
     assert "<script>alert(1)</script>" not in response.text
 
 
+def test_health_is_shallow_liveness_check(tmp_path: Path) -> None:
+    client, _flow, _queue = _client(tmp_path, fail=True)
+
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
 def test_upload_route_returns_413_and_429_plain_language_pages(tmp_path: Path) -> None:
     client, _flow, queue = _client(tmp_path, rate_limit=1)
 
