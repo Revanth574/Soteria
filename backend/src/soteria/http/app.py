@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import UTC, datetime
 import json
+import logging
 import os
 from pathlib import Path
 import re
@@ -12,6 +13,7 @@ from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from soteria.email import EmailConfig, EmailSender, LoggingEmailSender, create_email_sender
 from soteria.ephemeral import (
     EphemeralConfig,
     EphemeralStore,
@@ -36,6 +38,7 @@ from soteria.web import (
 _TOKEN_RE = re.compile(r"^[a-fA-F0-9]{32}$")
 _MULTIPART_OVERHEAD_ALLOWANCE_BYTES = 16 * 1024
 _STATIC_DIR = Path(__file__).resolve().parents[1] / "web" / "static"
+_LOGGER = logging.getLogger(__name__)
 
 
 class BackgroundTaskQueue(Protocol):
@@ -57,9 +60,13 @@ def create_app(
     config: EphemeralConfig,
     trust_proxy_headers: bool = False,
     background_queue_factory: Callable[[BackgroundTasks], BackgroundTaskQueue] | None = None,
+    email_sender: EmailSender | None = None,
+    public_base_url: str = "http://localhost:8000",
 ) -> FastAPI:
     app = FastAPI()
     app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
+    sender = email_sender or LoggingEmailSender()
+    base_url = public_base_url.rstrip("/")
 
     @app.middleware("http")
     async def add_security_headers(request: Request, call_next):
@@ -143,6 +150,8 @@ def create_app(
         if _record_or_none(flow, session_token) is None:
             return HTMLResponse(render_not_found_page(), status_code=404)
         token = flow.issue_signup_token(email=email, session_token=session_token)
+        magic_link_url = _build_magic_link_url(public_base_url=base_url, token=token.token)
+        sender.send_magic_link(to_email=email, magic_link_url=magic_link_url)
         return HTMLResponse(
             render_signup_gate(
                 email=email,
@@ -176,6 +185,7 @@ def create_app(
 def create_app_from_env() -> FastAPI:
     config = EphemeralConfig.from_env()
     extraction_config = ExtractionConfig.from_env()
+    email_config = EmailConfig.from_env()
     if extraction_config.combined_prompt_path is not None:
         extractor_config = ClaudeExtractorConfig.from_combined_file(
             extraction_config,
@@ -199,20 +209,47 @@ def create_app_from_env() -> FastAPI:
         flow=flow,
         config=config,
         trust_proxy_headers=_truthy(os.environ.get("TRUST_PROXY_HEADERS", "false")),
+        email_sender=create_email_sender(email_config),
+        public_base_url=email_config.public_base_url,
     )
 
 
 def _complete_analysis_safely(flow: SignupFreeFlow, session_token: str) -> None:
     try:
         flow.complete_analysis(session_token=session_token)
-    except Exception:
-        pass
+    except Exception as exc:
+        try:
+            flow.store.mark_analysis_failed(
+                session_token=session_token,
+                failure_message="Analysis failed before a valid result was produced.",
+            )
+        except Exception:
+            _LOGGER.exception(
+                "Background analysis failed and failed to mark session failed; "
+                "session_token=%s",
+                session_token,
+            )
+            _LOGGER.error(
+                "Original background analysis exception; session_token=%s",
+                session_token,
+                exc_info=(type(exc), exc, exc.__traceback__),
+            )
+            return
+        _LOGGER.error(
+            "Background analysis failed; session_token=%s",
+            session_token,
+            exc_info=(type(exc), exc, exc.__traceback__),
+        )
 
 
 def _record_or_none(flow: SignupFreeFlow, session_token: str):
     if not _TOKEN_RE.fullmatch(session_token):
         return None
     return flow.store.get_session(session_token, now=datetime.now(UTC))
+
+
+def _build_magic_link_url(*, public_base_url: str, token: str) -> str:
+    return f"{public_base_url.rstrip('/')}/signup/confirm/{token}"
 
 
 def _client_ip(request: Request, *, trust_proxy_headers: bool) -> str:

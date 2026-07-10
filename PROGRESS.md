@@ -513,8 +513,7 @@ Next action:
 
 ## 2026-07-09 - H1-7a Production VM Deployment
 
-Status: repo-side deployment assets built and locally tested. Live VM deployment
-not executed from this environment.
+Status: complete - production deployment live.
 
 Branch: `feature/h1-7a-production-vm-deploy`
 
@@ -554,47 +553,121 @@ Implemented:
   - keeps Python out of the static public-page path,
   - relies on Caddy's automatic HTTPS/HTTP-to-HTTPS behavior.
 
+Production deployment:
+- Live domains: `soteria.co.in` and `www.soteria.co.in`.
+- HTTPS is served by Caddy with Let's Encrypt.
+- Backend runs as a systemd-managed service under the non-root `soteria` user.
+- Uvicorn is bound loopback-only on `127.0.0.1:8000`; Caddy is the only
+  internet-facing process.
+- GCP VM: e2-micro, `asia-south1`, static IP `34.14.190.8`.
+- All six public red-flag pages are served statically from
+  `/var/www/soteria-public-pages`.
+- End-to-end smoke test passed live over HTTPS: real PDF upload -> background
+  extraction -> real Claude API (`claude-sonnet-5`) -> schema-validated result
+  -> rendered anonymous analysis page.
+- Anthropic API cost for smoke-test extractions:
+  [Revanth to fill from console.anthropic.com usage].
+
+Live smoke-test bugs surfaced and fixed:
+- `claude-sonnet-5` rejected `temperature` with HTTP 400
+  `invalid_request_error`; fixed by making temperature optional and omitting it
+  when unset.
+- Prompt loading expected separate system/extraction prompt files while the real
+  asset was authored as one combined file; fixed with
+  `SOTERIA_COMBINED_PROMPT_PATH`, `split_combined_prompt`, and ambiguous-config
+  validation.
+- The prompt file's embedded output-schema example hardcoded
+  `"schema_version": "1.1"` while the app validator required `"1.2"`, causing
+  extraction validation failure; corrected to `"1.2"`.
+- Background-task exception swallowing made the three issues above slow to
+  isolate; fixed by logging swallowed background exceptions with traceback and
+  `session_token`, and by marking unexpected worker failures as `failed`.
+
 Local validation:
-- `python -m pytest backend/tests/test_http_app.py -q` passes with `8 passed`.
-- `python -m pytest backend/tests -q` passes with `53 passed`.
+- `python -m pytest backend/tests/test_http_app.py -q` passes with `9 passed`.
+- `python -m pytest backend/tests -q` passes.
 - `python -m compileall -q backend/src` passes.
 
-Live deployment status:
-- Not executed from this Codex environment. `gcloud` is not installed locally:
-  `gcloud : The term 'gcloud' is not recognized...`.
-- Therefore no live `systemctl`, HTTPS `curl`, public-page `curl`, or real
-  upload smoke-test output exists yet.
-- Anthropic API cost incurred by live H1-7a smoke test: not incurred from this
-  environment, because the live smoke test was not run.
-
-Deployment inputs still required on the VM:
-- Real `ANTHROPIC_API_KEY` must be written manually into
-  `/opt/soteria/backend/.env`; it is not committed.
-- Real `ANTHROPIC_MODEL` must be set in the same environment file.
-- No manually provisioned `prompts/system.md` is required. The committed
-  combined prompt asset `prompts/extract_policy_v1.2.md` is sufficient on its
-  own when `SOTERIA_COMBINED_PROMPT_PATH` is set.
-- No committed static public HTML pages currently exist under `public/`,
-  `policies/`, or another static HTML output directory. The production Caddy
-  route is ready, but `/policies/...` will return a static 404 until those pages
-  are placed under `/var/www/soteria-public-pages/policies`.
-
 Known gaps:
-- Email/magic-link delivery remains a dev stub in production until H1-7b.
-  Signup in production currently has no way to deliver a link to a real user's
-  inbox.
-- Live VM deployment and verification remain to be executed from a machine with
-  `gcloud` access or directly inside the GCP Console SSH session.
-- Static public red-flag pages need committed/generated HTML artifacts or a
-  manual copy step before the `/policies/...` verification can pass.
+- Closed by H1-7b: signup magic-link email delivery is no longer a dev-only
+  stub when `RESEND_API_KEY` is configured.
 
 Self-audit against handoff prohibitions:
-- Prompt content not edited.
+- No prompt content edited in this close-out branch.
 - `docs/` and `fixtures/` not touched.
 - No email delivery or magic-link sending added.
 - No public-page hosting implementation beyond Caddy static-file routing.
 - No H2 feature work started.
 
 Next action:
-- Run `DEPLOY.md` on the production VM, paste actual command outputs, record
-  the live smoke-test Anthropic cost, then ratify/merge H1-7a.
+- H1-7b ratification/merge, then operator DNS/domain verification for Resend.
+
+## 2026-07-10 - H1-7b Real Magic-Link Email Delivery
+
+Status: complete - built and locally tested. Not merged.
+
+Branch: `feature/h1-7b-real-magic-link-email`
+
+Implemented:
+- Added `EmailSender` protocol with one method:
+  `send_magic_link(to_email, magic_link_url)`.
+- Added `LoggingEmailSender` dev/stub implementation that logs the generated
+  magic link instead of sending.
+- Added `ResendEmailSender` production implementation using Resend's REST API
+  via Python stdlib HTTP calls; no new SDK dependency was added.
+- Added `EmailConfig` with:
+  - `RESEND_API_KEY` optional,
+  - `EMAIL_FROM_ADDRESS` required when `RESEND_API_KEY` is set,
+  - `SOTERIA_PUBLIC_BASE_URL` for absolute magic-link URL construction.
+- Sender selection:
+  - no `RESEND_API_KEY` -> `LoggingEmailSender`,
+  - `RESEND_API_KEY` set -> `ResendEmailSender`.
+- Wired `/signup/request` to send the already-generated signup token by email.
+  Token generation, token storage, expiry, consume, and account attachment
+  logic were not rebuilt or changed.
+- Magic-link URL uses the existing confirm route:
+  `{SOTERIA_PUBLIC_BASE_URL}/signup/confirm/{token}`.
+- Email content is plain/minimal:
+  - subject: "Your Soteria analysis link",
+  - plain-text body,
+  - minimal HTML body,
+  - 30-minute expiry note matching the existing signup token TTL,
+  - no policy content or analysis content.
+
+RED-proofs:
+- RED phase observed: `backend/tests/test_email_delivery.py` first failed
+  because `soteria.email` did not exist.
+- `/signup/request` with a mocked `EmailSender` calls `send_magic_link` exactly
+  once with the requested recipient and an absolute HTTPS URL pointing at the
+  real confirm route.
+- End-to-end mocked-delivery signup path still works:
+  request signup -> capture emailed link -> hit confirm route -> session is
+  attached and full tier is accessible.
+- With `RESEND_API_KEY` unset, config selects `LoggingEmailSender`; no real send
+  is attempted.
+- Email body contains the magic link and does not include policy text or
+  analysis content.
+
+Validation:
+- `python -m pytest backend/tests/test_email_delivery.py -q` passes with
+  `5 passed`.
+- `python -m pytest backend/tests/test_http_app.py -q` passes with `9 passed`.
+- `python -m pytest backend/tests -q` passes.
+- `python -m compileall -q backend/src` passes.
+
+Operator actions still required:
+- Provision `RESEND_API_KEY` on the VM; never commit it.
+- Provision `EMAIL_FROM_ADDRESS` on the VM.
+- Set `SOTERIA_PUBLIC_BASE_URL=https://soteria.co.in` on the VM.
+- Complete Resend DNS/domain verification for the sending domain.
+
+Self-audit against handoff prohibitions:
+- Prompt content not edited.
+- Extraction pipeline not touched.
+- Ephemeral deletion/TTL logic not touched.
+- Token generation, expiry, consumption, and account attachment logic not
+  touched.
+- No real email was sent by the test suite.
+
+Next action:
+- H1-7b architect review/ratification, then merge.

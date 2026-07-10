@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from datetime import UTC, datetime
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -253,6 +254,34 @@ def test_malformed_extractor_output_uses_failure_page_without_raw_response_leak(
     assert raw_response_fragment not in failed.text
     assert "malformed JSON" not in failed.text
     assert "Traceback" not in failed.text
+
+
+def test_background_task_logs_and_marks_failed_for_unexpected_store_error(
+    tmp_path: Path,
+    caplog,
+) -> None:
+    client, flow, queue = _client(tmp_path)
+    upload_response = _upload(client)
+    session_token = _session_from_redirect(upload_response)
+
+    def fail_mark_complete(*, session_token: str, analysis: ExtractionResult) -> None:
+        raise RuntimeError("synthetic store write failure")
+
+    flow.store.mark_analysis_complete = fail_mark_complete
+
+    with caplog.at_level(logging.ERROR):
+        queue.run_all()
+
+    record = flow.store.get_session(session_token, now=datetime.now(UTC))
+    assert record is not None
+    assert record.status == "failed"
+    log_records = [
+        record
+        for record in caplog.records
+        if record.levelno == logging.ERROR and session_token in record.getMessage()
+    ]
+    assert log_records
+    assert log_records[0].exc_info is not None
 
 
 def test_token_safety_clean_404_pages(tmp_path: Path) -> None:
