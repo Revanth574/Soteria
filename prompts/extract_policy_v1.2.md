@@ -7,7 +7,9 @@ Senior Red Carpet, Care Supreme Enhance). v1.0/v1.1 constraints unchanged
 unless a P-fix supersedes them.
 
 ================================================================
+
 ## SYSTEM INSTRUCTIONS
+
 ================================================================
 
 You are Soteria's policy analysis engine — an expert in Indian health
@@ -109,8 +111,8 @@ Rules:
    - proportionate_deduction.clause_present = TRUE (the clause exists),
    - a red flag under RF-019 whose scenario is explicitly conditioned on
      opting the cover.
-   NEVER set the base link/boolean true merely because the mechanic COULD
-   activate under an option. "Present but dormant" ≠ "active."
+     NEVER set the base link/boolean true merely because the mechanic COULD
+     activate under an option. "Present but dormant" ≠ "active."
 
 4. Consistency check before you finish: for any two optional-cover
    situations that are structurally identical (e.g. voluntary co-pay and
@@ -123,7 +125,9 @@ Rules:
    still lands somewhere structured.
 
 ================================================================
+
 ## EXTRACTION TASK
+
 ================================================================
 
 You will be given the full text of an Indian health insurance policy
@@ -135,17 +139,19 @@ Extract structured information and return a SINGLE JSON object conforming
 exactly to the schema below. Return ONLY valid JSON — no preamble, no
 markdown fences. Begin your response with `{`.
 
-### Output schema (v1.1 — additive changes marked ★)
+### Output schema (v1.2 — additive changes marked ★)
 
 ```json
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
 
   "metadata": {
     "insurer_name": "string | null",
     "product_name": "string | null",
     "product_uin": "string | null",
-    "policy_forms_offered": ["★ array subset of: individual, family_floater, multi_individual, group, senior_citizen, critical_illness, top_up, super_top_up"],
+    "policy_forms_offered": [
+      "★ array subset of: individual, family_floater, multi_individual, group, senior_citizen, critical_illness, top_up, super_top_up"
+    ],
     "policy_type": "primary form if one dominates, else 'multiple' — individual | family_floater | multi_individual | group | senior_citizen | critical_illness | top_up | super_top_up | multiple | unknown",
     "policy_term_years_options": ["★ array of integers, or null"],
     "document_date": "string | null",
@@ -157,7 +163,11 @@ markdown fences. Begin your response with `{`.
 
   "coverage": {
     "sum_insured_type": "individual | floater | both_options_available",
-    "inpatient_hospitalization": { "covered": "boolean", "minimum_hours": "integer | null", "raw_clause": "string | null" },
+    "inpatient_hospitalization": {
+      "covered": "boolean",
+      "minimum_hours": "integer | null",
+      "raw_clause": "string | null"
+    },
     "restoration_benefit": {
       "available": "boolean",
       "restore_to_original_si": "boolean | null",
@@ -167,20 +177,77 @@ markdown fences. Begin your response with `{`.
       "conditions": "string | null",
       "raw_clause": "string | null"
     },
-    "no_claim_bonus": { "available": "boolean", "type": "cumulative_increase | percentage_of_si | discount_on_premium | both | null — a loyalty/cumulative bonus expressed as % of SI is 'cumulative_increase' or 'percentage_of_si', NOT null", "percentage_per_year": "number | null", "max_percentage": "number | null", "raw_clause": "string | null" },
-    "pre_hospitalization": { "days_covered": "integer | null", "raw_clause": "string | null" },
-    "post_hospitalization": { "days_covered": "integer | null", "raw_clause": "string | null" },
-    "day_care_procedures": { "covered": "boolean", "specific_list_only": "boolean | null", "procedure_count": "integer | null", "raw_clause": "string | null" },
-    "domiciliary_hospitalization": { "covered": "boolean", "sub_limit_inr": "integer | null", "sub_limit_percentage_of_si": "number | null", "raw_clause": "string | null" },
-    "ayush_treatment": { "covered": "boolean", "sub_limit_inr": "integer | null", "sub_limit_percentage_of_si": "number | null", "conditions": "★ string | null — e.g. prior-approval requirements", "raw_clause": "string | null" },
-    "modern_treatments": { "covered": "boolean", "treatments_listed": ["string array or null"], "sub_limit_percentage_of_si": "number | null", "raw_clause": "string | null" },
-    "organ_donor": { "covered": "boolean", "covers_donor_medical_expenses": "boolean | null", "sub_limit_inr": "integer | null", "raw_clause": "string | null" },
-    "ambulance": {
-      "road": { "★ covered": "boolean", "limit_inr": "integer | null", "per_what": "per_hospitalization | per_year | null", "raw_clause": "string | null" },
-      "air": { "★ covered": "boolean", "limit_inr": "integer | null", "per_what": "per_hospitalization | per_year | null", "raw_clause": "string | null" }
+    "no_claim_bonus": {
+      "available": "boolean",
+      "type": "cumulative_increase | percentage_of_si | discount_on_premium | both | null — a loyalty/cumulative bonus expressed as % of SI is 'cumulative_increase' or 'percentage_of_si', NOT null",
+      "percentage_per_year": "number | null",
+      "max_percentage": "number | null",
+      "raw_clause": "string | null"
     },
-    "network_hospitals": { "count_stated": "integer | null", "preferred_network_exists": "boolean | null", "preferred_network_is_optional_cover": "★ boolean | null", "raw_clause": "string | null" },
-    "lifetime_renewability": { "guaranteed": "boolean | null", "renewal_age_cap": "integer | null", "raw_clause": "string | null" }
+    "pre_hospitalization": {
+      "days_covered": "integer | null",
+      "raw_clause": "string | null"
+    },
+    "post_hospitalization": {
+      "days_covered": "integer | null",
+      "raw_clause": "string | null"
+    },
+    "day_care_procedures": {
+      "covered": "boolean",
+      "specific_list_only": "boolean | null",
+      "procedure_count": "integer | null",
+      "raw_clause": "string | null"
+    },
+    "domiciliary_hospitalization": {
+      "covered": "boolean",
+      "sub_limit_inr": "integer | null",
+      "sub_limit_percentage_of_si": "number | null",
+      "raw_clause": "string | null"
+    },
+    "ayush_treatment": {
+      "covered": "boolean",
+      "sub_limit_inr": "integer | null",
+      "sub_limit_percentage_of_si": "number | null",
+      "conditions": "★ string | null — e.g. prior-approval requirements",
+      "raw_clause": "string | null"
+    },
+    "modern_treatments": {
+      "covered": "boolean",
+      "treatments_listed": ["string array or null"],
+      "sub_limit_percentage_of_si": "number | null",
+      "raw_clause": "string | null"
+    },
+    "organ_donor": {
+      "covered": "boolean",
+      "covers_donor_medical_expenses": "boolean | null",
+      "sub_limit_inr": "integer | null",
+      "raw_clause": "string | null"
+    },
+    "ambulance": {
+      "road": {
+        "★ covered": "boolean",
+        "limit_inr": "integer | null",
+        "per_what": "per_hospitalization | per_year | null",
+        "raw_clause": "string | null"
+      },
+      "air": {
+        "★ covered": "boolean",
+        "limit_inr": "integer | null",
+        "per_what": "per_hospitalization | per_year | null",
+        "raw_clause": "string | null"
+      }
+    },
+    "network_hospitals": {
+      "count_stated": "integer | null",
+      "preferred_network_exists": "boolean | null",
+      "preferred_network_is_optional_cover": "★ boolean | null",
+      "raw_clause": "string | null"
+    },
+    "lifetime_renewability": {
+      "guaranteed": "boolean | null",
+      "renewal_age_cap": "integer | null",
+      "raw_clause": "string | null"
+    }
   },
 
   "financial_terms": {
@@ -195,10 +262,31 @@ markdown fences. Begin your response with `{`.
       "linked_to_proportionate_deduction": "boolean — BASE policy only; see P1 dormant-clause rule",
       "raw_clause": "string | null"
     },
-    "co_pay": { "applies": "boolean — BASE only", "percentage": "number | null", "applies_to": "null when applies=false; else one of: all_claims | senior_citizen_only | specific_diseases | non_network_hospitals | specific_conditions", "conditions": "string | null", "raw_clause": "string | null" },
-    "deductible": { "applies": "boolean — BASE only", "amount_inr": "integer | null", "type": "per_claim | aggregate_annual | null", "raw_clause": "string | null" },
-    "proportionate_deduction": { "clause_present": "boolean", "active_in_base_policy": "★ boolean — false when dormant/optional", "raw_clause": "string | null", "plain_explanation": "string | null" },
-    "non_medical_expenses": { "excluded_per_irdai_list": "boolean | null", "waiver_available": "boolean | null", "waiver_is_optional_cover": "★ boolean | null", "raw_clause": "string | null" }
+    "co_pay": {
+      "applies": "boolean — BASE only",
+      "percentage": "number | null",
+      "applies_to": "null when applies=false; else one of: all_claims | senior_citizen_only | specific_diseases | non_network_hospitals | specific_conditions",
+      "conditions": "string | null",
+      "raw_clause": "string | null"
+    },
+    "deductible": {
+      "applies": "boolean — BASE only",
+      "amount_inr": "integer | null",
+      "type": "per_claim | aggregate_annual | null",
+      "raw_clause": "string | null"
+    },
+    "proportionate_deduction": {
+      "clause_present": "boolean",
+      "active_in_base_policy": "★ boolean — false when dormant/optional",
+      "raw_clause": "string | null",
+      "plain_explanation": "string | null"
+    },
+    "non_medical_expenses": {
+      "excluded_per_irdai_list": "boolean | null",
+      "waiver_available": "boolean | null",
+      "waiver_is_optional_cover": "★ boolean | null",
+      "raw_clause": "string | null"
+    }
   },
 
   "optional_covers": [
@@ -208,18 +296,38 @@ markdown fences. Begin your response with `{`.
       "what_it_does": "string — plain language, one or two sentences",
       "premium_effect": "additional_premium | premium_reduction | unknown",
       "introduces_risk": "boolean — true if opting it activates a cost-sharing, forfeiture, offset, or deduction mechanic",
-      "linked_red_flag_ids": ["array of red_flag ids this cover triggers, or empty"],
+      "linked_red_flag_ids": [
+        "array of red_flag ids this cover triggers, or empty"
+      ],
       "raw_clause": "string | null"
     }
   ],
 
   "waiting_periods": [
-    { "category": "initial | pre_existing_disease | specific_disease | maternity | moratorium | other", "applies_to": "string", "duration_months": "integer", "duration_days": "★ integer | null — use when the period is stated in days (e.g. 30)", "waivable": "boolean | null", "waiver_mechanism": "★ string | null — how it is reduced/waived, if stated", "raw_clause": "string", "industry_standard_months": "integer | null", "is_longer_than_standard": "boolean" }
+    {
+      "category": "initial | pre_existing_disease | specific_disease | maternity | moratorium | other",
+      "applies_to": "string",
+      "duration_months": "integer",
+      "duration_days": "★ integer | null — use when the period is stated in days (e.g. 30)",
+      "waivable": "boolean | null",
+      "waiver_mechanism": "★ string | null — how it is reduced/waived, if stated",
+      "raw_clause": "string",
+      "industry_standard_months": "integer | null",
+      "is_longer_than_standard": "boolean"
+    }
   ],
 
   "sub_limits": [
     "Use for SIMPLE (non-banded) sub-limits — a single limit not varying by SI tier.",
-    { "applies_to": "string", "limit_type": "absolute_inr | percentage_of_si", "limit_value": "number", "per_what": "per_claim | per_year | per_illness | per_procedure | per_lifetime", "is_optional_cover": "★ boolean", "raw_clause": "string", "is_low_for_procedure_type": "boolean | null" }
+    {
+      "applies_to": "string",
+      "limit_type": "absolute_inr | percentage_of_si",
+      "limit_value": "number",
+      "per_what": "per_claim | per_year | per_illness | per_procedure | per_lifetime",
+      "is_optional_cover": "★ boolean",
+      "raw_clause": "string",
+      "is_low_for_procedure_type": "boolean | null"
+    }
   ],
 
   "sub_limit_tables": [
@@ -228,7 +336,12 @@ markdown fences. Begin your response with `{`.
       "applies_to": "string — the procedure, disease, or billing category (e.g. 'Cataract', 'Cardiovascular disease', 'Surgeon fees')",
       "limit_kind": "procedure | disease | modern_treatment | billing_category | other",
       "bands": [
-        { "si_band": "string — the SI band as written, e.g. '5,00,000' or '1L-2L' or '10L and above'", "limit_type": "absolute_inr | percentage_of_si", "limit_value": "number", "per_what": "per_claim | per_year | per_illness | per_procedure | per_lifetime" }
+        {
+          "si_band": "string — the SI band as written, e.g. '5,00,000' or '1L-2L' or '10L and above'",
+          "limit_type": "absolute_inr | percentage_of_si",
+          "limit_value": "number",
+          "per_what": "per_claim | per_year | per_illness | per_procedure | per_lifetime"
+        }
       ],
       "representative_limit_at_mid_market": "number | null — the limit at the SI band nearest ₹5–10L, for quick user-facing comparison",
       "is_low_for_procedure_type": "boolean | null",
@@ -237,7 +350,13 @@ markdown fences. Begin your response with `{`.
   ],
 
   "exclusions": [
-    { "category": "permanent | temporary_first_n_years | pre_existing_until_waiting | conditional", "description": "string", "duration_years_if_temporary": "integer | null", "raw_clause": "string", "is_standard_irdai_exclusion": "boolean" }
+    {
+      "category": "permanent | temporary_first_n_years | pre_existing_until_waiting | conditional",
+      "description": "string",
+      "duration_years_if_temporary": "integer | null",
+      "raw_clause": "string",
+      "is_standard_irdai_exclusion": "boolean"
+    }
   ],
 
   "claim_process": {
@@ -267,7 +386,16 @@ markdown fences. Begin your response with `{`.
   ],
 
   "extraction_confidence": {
-    "overall": "decimal 0.0-1.0 (P9)", "metadata": "decimal 0.0-1.0", "coverage": "decimal 0.0-1.0", "financial_terms": "decimal 0.0-1.0", "optional_covers": "decimal 0.0-1.0", "waiting_periods": "decimal 0.0-1.0", "sub_limits": "decimal 0.0-1.0", "exclusions": "decimal 0.0-1.0", "red_flags": "decimal 0.0-1.0", "notes": "string | null"
+    "overall": "decimal 0.0-1.0 (P9)",
+    "metadata": "decimal 0.0-1.0",
+    "coverage": "decimal 0.0-1.0",
+    "financial_terms": "decimal 0.0-1.0",
+    "optional_covers": "decimal 0.0-1.0",
+    "waiting_periods": "decimal 0.0-1.0",
+    "sub_limits": "decimal 0.0-1.0",
+    "exclusions": "decimal 0.0-1.0",
+    "red_flags": "decimal 0.0-1.0",
+    "notes": "string | null"
   }
 }
 ```
@@ -280,13 +408,14 @@ taxonomy_RF015-019.md and are reproduced in brief below; use the full text
 when available.
 
 [RF-001 … RF-014 — unchanged from v1.0, with these v1.1 clarifications:
- - RF-001 fires ONLY for a MANDATORY base-policy room-rent+deduction combo.
-   If the deduction is dormant/optional, use RF-019 and do NOT fire RF-001
-   against the base policy.
- - RF-006 covers BASE-policy conditional co-pay only. Optional-cover co-pay
-   → RF-017 and/or RF-019.
- - RF-012 and RF-017 overlap when a network is both restricted AND mutable;
-   fire RF-017.]
+
+- RF-001 fires ONLY for a MANDATORY base-policy room-rent+deduction combo.
+  If the deduction is dormant/optional, use RF-019 and do NOT fire RF-001
+  against the base policy.
+- RF-006 covers BASE-policy conditional co-pay only. Optional-cover co-pay
+  → RF-017 and/or RF-019.
+- RF-012 and RF-017 overlap when a network is both restricted AND mutable;
+  fire RF-017.]
 
 RF-015 Benefit forfeiture / one-shot & resetting covers (HIGH): a benefit
 usable once then permanently ceasing, or that zeroes SI/bonus on a trigger
