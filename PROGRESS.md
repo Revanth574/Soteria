@@ -671,3 +671,80 @@ Self-audit against handoff prohibitions:
 
 Next action:
 - H1-7b architect review/ratification, then merge.
+
+## Session end - 2026-07-13: Live production, and the large-document ceiling
+
+### What is live and working
+- Full production deployment at soteria.co.in / www.soteria.co.in: HTTPS via
+  Caddy + Let's Encrypt, systemd-managed FastAPI (uvicorn) running as non-root
+  `soteria` user, loopback-only (127.0.0.1:8000), Caddy sole internet-facing
+  process.
+- GCP e2-medium (upgraded from e2-micro this session - see below),
+  asia-south1, static IP 34.14.190.8.
+- All six public red-flag pages served statically from
+  /var/www/soteria-public-pages.
+- Real magic-link email delivery LIVE: Resend, sending domain soteria.co.in
+  verified (DKIM/SPF/MX via GoDaddy Domain Connect auto-configure). Config in
+  `.env`: `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS=noreply@soteria.co.in`,
+  `SOTERIA_PUBLIC_BASE_URL=https://soteria.co.in`.
+- Extraction pipeline works end-to-end through the live site for
+  small-to-medium real documents.
+
+### Bugs found + fixed this session (all live-only, none caught by the test suite)
+1. `temperature` rejected by `claude-sonnet-5` (400) -> made
+   optional/omitted-when-None. [merged]
+2. Combined-prompt loading mismatch (prompt authored as one file, config
+   expected two) -> `SOTERIA_COMBINED_PROMPT_PATH` + `split_combined_prompt` +
+   ambiguous-config validation. [merged]
+3. Prompt's embedded schema example hardcoded schema_version "1.1" while
+   validator required "1.2" -> corrected. [merged]
+4. Background task swallowed exceptions silently -> structured logging with
+   session_token + traceback; mark-failed on any exception. [merged]
+5. Memory exhaustion on e2-micro (1GB) - real full-size PDF parsing + large LLM
+   round-trip pushed box into swap, wedged SSH -> resized to e2-medium (4GB).
+   Root architectural note: PDF parsing is synchronous in request path; moving
+   it into the background task is a future hardening item.
+6. `max_tokens=16000` too low for Sonnet 5 - adaptive thinking (on by default)
+   consumed the whole budget before emitting output -> empty response ->
+   `MalformedModelOutputError`. Raised to `ANTHROPIC_MAX_TOKENS=64000` (in
+   `.env`; also update code default + `.env.example`).
+7. Added configurable `ANTHROPIC_TIMEOUT_SECONDS` (default 120), set to 300 in
+   production. [merged]
+
+### THE OPEN ITEM - large-document ceiling (next session)
+Confirmed real architectural limit, not a config bug. A 308K-char / ~90K-token
+real policy (Aditya Birla Activ One, UIN ADIHLIP24097V012324):
+- Succeeds via direct diagnostic script at `max_tokens=64000` (~2m40s, 47K
+  chars valid JSON ending in `}`).
+- FAILS through the live service: the larger max_tokens lets Sonnet 5's
+  adaptive thinking run long enough that the request exceeds the 300s timeout;
+  the Anthropic client's default retries (~2x) stack to ~11 min before
+  `APITimeoutError`.
+- Every single-shot knob (memory / max_tokens / timeout) just moves the failure
+  - this is the signal to build chunking.
+
+**Decision:** build the chunking / map-reduce extraction increment next session,
+as the correct architecture for large documents (NOT an optimization). Deferred
+rather than built tired - correctness here is brand-critical (a missed trap is
+the worst failure mode).
+
+**Chunking increment starting facts:**
+- Failure mode is timeout-from-LENGTH, not context-limit - 1M context window is
+  ample (input is only ~90K tokens). The problem is generation time, not fitting
+  the input.
+- Design questions to solve deliberately: split without severing a raw_clause
+  across a boundary; merge red_flags without dup/loss; keep base-vs-optional +
+  waiting-period + sub_limit_table coherence across chunks; reconcile
+  confidence.
+- **Also evaluate first, may defer chunking further:** explicitly tuning DOWN
+  Sonnet 5's adaptive thinking for extraction (`thinking:{type:"disabled"}` or
+  a capped effort level). The long request time is largely thinking; capping it
+  may get single-shot working for larger docs and push the chunking threshold
+  higher.
+
+### Follow-up config housekeeping (small, next session)
+- Formalize `ANTHROPIC_MAX_TOKENS` default in code + `.env.example` (currently
+  only set in production `.env`).
+- Record smoke-test API costs in PROGRESS from console.anthropic.com.
+- Consider installing sqlite3 CLI on VM for DB inspection (app itself doesn't
+  need it).
