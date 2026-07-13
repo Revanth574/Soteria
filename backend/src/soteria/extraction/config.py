@@ -8,6 +8,7 @@ import os
 from soteria.extraction.errors import ConfigurationError
 
 _DEFAULT_MAX_TOKENS = 16000
+_DEFAULT_TIMEOUT_SECONDS = 120.0
 _DEFAULT_PROMPT_PATH = Path("prompts/extract_policy_v1.2.md")
 
 
@@ -18,6 +19,7 @@ class ExtractionConfig:
     api_key: str
     max_tokens: int = _DEFAULT_MAX_TOKENS
     temperature: float | None = None
+    timeout_seconds: float = _DEFAULT_TIMEOUT_SECONDS
     combined_prompt_path: Path | None = None
 
     @classmethod
@@ -55,6 +57,9 @@ class ExtractionConfig:
             api_key=api_key,
             max_tokens=int(merged_env.get("ANTHROPIC_MAX_TOKENS", str(_DEFAULT_MAX_TOKENS))),
             temperature=_optional_float(merged_env.get("ANTHROPIC_TEMPERATURE")),
+            timeout_seconds=float(
+                merged_env.get("ANTHROPIC_TIMEOUT_SECONDS", str(_DEFAULT_TIMEOUT_SECONDS))
+            ),
             combined_prompt_path=Path(combined_prompt_path) if combined_prompt_path else None,
         )
 

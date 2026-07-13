@@ -49,6 +49,7 @@ def test_combined_prompt_env_path_builds_same_prompts_as_manual_split(tmp_path: 
         env={
             "ANTHROPIC_API_KEY": "test-key",
             "ANTHROPIC_MODEL": "claude-test",
+            "ANTHROPIC_TIMEOUT_SECONDS": "300",
             "SOTERIA_COMBINED_PROMPT_PATH": str(combined_prompt_path),
         }
     )
@@ -62,6 +63,24 @@ def test_combined_prompt_env_path_builds_same_prompts_as_manual_split(tmp_path: 
 
     assert extractor.system_prompt == expected_system_prompt
     assert extractor.extraction_prompt_template == expected_extraction_prompt
+    assert extractor_config.timeout_seconds == 300.0
+
+
+def test_timeout_env_unset_keeps_existing_default_for_legacy_config(tmp_path: Path) -> None:
+    extraction_config = ExtractionConfig.from_env(
+        env={
+            "ANTHROPIC_API_KEY": "test-key",
+            "ANTHROPIC_MODEL": "claude-test",
+        }
+    )
+
+    extractor_config = ClaudeExtractorConfig.from_extraction_config(
+        extraction_config,
+        system_prompt_path=tmp_path / "system.md",
+    )
+
+    assert extraction_config.timeout_seconds == 120.0
+    assert extractor_config.timeout_seconds == 120.0
 
 
 def test_combined_prompt_env_path_set_alone_is_valid(tmp_path: Path) -> None:

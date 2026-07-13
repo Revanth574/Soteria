@@ -44,6 +44,7 @@ class ClaudeExtractorConfig:
             api_key=config.api_key,
             max_tokens=config.max_tokens,
             temperature=config.temperature,
+            timeout_seconds=config.timeout_seconds,
         )
 
     @classmethod
@@ -67,6 +68,7 @@ class ClaudeExtractorConfig:
             api_key=config.api_key,
             max_tokens=config.max_tokens,
             temperature=config.temperature,
+            timeout_seconds=config.timeout_seconds,
             system_prompt_text=system_prompt,
             extraction_prompt_text=extraction_prompt,
         )
