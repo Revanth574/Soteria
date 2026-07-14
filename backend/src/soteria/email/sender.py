@@ -11,6 +11,8 @@ from soteria.extraction.errors import ConfigurationError, ExtractionAdapterError
 
 _LOGGER = logging.getLogger(__name__)
 _RESEND_API_URL = "https://api.resend.com/emails"
+_USER_AGENT = "Soteria/1.0 (+https://soteria.co.in)"
+_MAX_ERROR_RESPONSE_BODY_CHARS = 200
 
 
 class EmailSender(Protocol):
@@ -60,13 +62,33 @@ class ResendEmailSender:
             headers={
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
+                "User-Agent": _USER_AGENT,
             },
         )
         try:
             with request.urlopen(resend_request, timeout=10) as response:
                 if response.status >= 400:
-                    raise ExtractionAdapterError("Resend email delivery failed.")
+                    response_body = _read_response_body(response)
+                    _LOGGER.error(
+                        "Resend email delivery failed; status_code=%s response_body=%r",
+                        response.status,
+                        response_body,
+                    )
+                    raise ExtractionAdapterError(
+                        f"Resend email delivery failed (HTTP {response.status}): {response_body}"
+                    )
+        except error.HTTPError as exc:
+            response_body = _read_response_body(exc)
+            _LOGGER.error(
+                "Resend email delivery failed; status_code=%s response_body=%r",
+                exc.code,
+                response_body,
+            )
+            raise ExtractionAdapterError(
+                f"Resend email delivery failed (HTTP {exc.code}): {response_body}"
+            ) from exc
         except error.URLError as exc:
+            _LOGGER.error("Resend email delivery failed; reason=%s", exc.reason)
             raise ExtractionAdapterError("Resend email delivery failed.") from exc
 
 
@@ -94,3 +116,19 @@ def build_magic_link_email(*, magic_link_url: str, expires_minutes: int) -> Emai
         "<p>If you did not request this, you can ignore this email.</p>"
     )
     return EmailMessage(subject=subject, text=text, html=html)
+
+
+def _read_response_body(response: object) -> str:
+    read = getattr(response, "read", None)
+    if not callable(read):
+        return ""
+    try:
+        response_body = read()
+    except OSError:
+        return "<unavailable>"
+
+    if isinstance(response_body, bytes):
+        text = response_body.decode("utf-8", errors="replace")
+    else:
+        text = str(response_body)
+    return text[:_MAX_ERROR_RESPONSE_BODY_CHARS]

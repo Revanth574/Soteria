@@ -710,6 +710,15 @@ Next action:
    `.env`; also update code default + `.env.example`).
 7. Added configurable `ANTHROPIC_TIMEOUT_SECONDS` (default 120), set to 300 in
    production. [merged]
+8. Resend email requests sent through stdlib `urllib` were blocked by
+   Cloudflare error 1010 because its default `Python-urllib/x.y` User-Agent
+   looked bot-like. Fixed locally by sending the explicit identifying
+   `Soteria/1.0 (+https://soteria.co.in)` User-Agent and logging a truncated
+   third-party error response body without session, recipient, or email
+   content. This was live-only because mocked delivery tests did not inspect
+   real HTTP request headers. General lesson: every future stdlib `urllib` or
+   raw HTTP client call to a third-party API must set an explicit User-Agent by
+   default. [pending deployment]
 
 ### THE OPEN ITEM - large-document ceiling (next session)
 Confirmed real architectural limit, not a config bug. A 308K-char / ~90K-token

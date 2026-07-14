@@ -1,15 +1,25 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from io import BytesIO
+import logging
 from pathlib import Path
 from typing import Any
+from urllib import error, request
 from urllib.parse import urlparse
 
 import pytest
 from fastapi.testclient import TestClient
 
 from soteria.ephemeral import EphemeralConfig, EphemeralStore, SignupFreeFlow
-from soteria.email import EmailConfig, LoggingEmailSender, build_magic_link_email, create_email_sender
+from soteria.email import (
+    EmailConfig,
+    LoggingEmailSender,
+    ResendEmailSender,
+    build_magic_link_email,
+    create_email_sender,
+)
+from soteria.extraction.errors import ExtractionAdapterError
 from soteria.extraction import ExtractionResult
 from soteria.http.app import _build_magic_link_url
 
@@ -173,6 +183,68 @@ def test_signup_confirm_still_attaches_session_from_emailed_link(http_signup_cli
     full_response = client.get(f"/a/{session_token}/full")
     assert full_response.status_code == 200
     assert "Full tier only coverage value" in full_response.text
+
+
+def test_resend_request_has_identifying_user_agent(monkeypatch) -> None:
+    sent_requests: list[request.Request] = []
+
+    class SuccessfulResponse:
+        status = 200
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args) -> None:
+            return None
+
+    def fake_urlopen(resend_request: request.Request, *, timeout: int) -> SuccessfulResponse:
+        assert timeout == 10
+        sent_requests.append(resend_request)
+        return SuccessfulResponse()
+
+    monkeypatch.setattr("soteria.email.sender.request.urlopen", fake_urlopen)
+
+    ResendEmailSender(
+        api_key="test-key",
+        from_address="noreply@soteria.co.in",
+    ).send_magic_link(
+        to_email="user@example.com",
+        magic_link_url="https://soteria.co.in/signup/confirm/token123",
+    )
+
+    assert sent_requests[0].get_header("User-agent") == "Soteria/1.0 (+https://soteria.co.in)"
+
+
+def test_resend_http_error_logs_and_surfaces_truncated_response_body(monkeypatch, caplog) -> None:
+    response_body = b"Cloudflare error 1010: access denied " + (b"x" * 300)
+
+    def fake_urlopen(_resend_request: request.Request, *, timeout: int) -> None:
+        assert timeout == 10
+        raise error.HTTPError(
+            url="https://api.resend.com/emails",
+            code=403,
+            msg="Forbidden",
+            hdrs=None,
+            fp=BytesIO(response_body),
+        )
+
+    monkeypatch.setattr("soteria.email.sender.request.urlopen", fake_urlopen)
+    sender = ResendEmailSender(
+        api_key="test-key",
+        from_address="noreply@soteria.co.in",
+    )
+
+    with caplog.at_level(logging.ERROR, logger="soteria.email.sender"):
+        with pytest.raises(ExtractionAdapterError, match="Cloudflare error 1010") as exc_info:
+            sender.send_magic_link(
+                to_email="user@example.com",
+                magic_link_url="https://soteria.co.in/signup/confirm/token123",
+            )
+
+    assert any("Cloudflare error 1010" in record.message for record in caplog.records)
+    assert all("user@example.com" not in record.message for record in caplog.records)
+    assert response_body[:200].decode("utf-8") in str(exc_info.value)
+    assert response_body[:201].decode("utf-8") not in str(exc_info.value)
 
 
 def _pdf_bytes(text: str) -> bytes:
