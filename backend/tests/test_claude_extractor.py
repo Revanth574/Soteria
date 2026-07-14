@@ -114,7 +114,7 @@ def test_client_timeout_or_api_error_surfaces_without_retry(tmp_path: Path) -> N
     assert len(client.calls) == 1
 
 
-def test_anthropic_client_omits_temperature_when_none_and_sends_float(monkeypatch) -> None:
+def test_anthropic_client_omits_optional_settings_and_sends_explicit_values(monkeypatch) -> None:
     calls: list[dict] = []
 
     class FakeMessages:
@@ -139,6 +139,7 @@ def test_anthropic_client_omits_temperature_when_none_and_sends_float(monkeypatc
         model="claude-test",
         max_tokens=100,
         temperature=None,
+        effort=None,
         timeout_seconds=10,
     )
     client.complete(
@@ -147,8 +148,11 @@ def test_anthropic_client_omits_temperature_when_none_and_sends_float(monkeypatc
         model="claude-test",
         max_tokens=100,
         temperature=0.2,
+        effort="medium",
         timeout_seconds=10,
     )
 
     assert "temperature" not in calls[0]
+    assert "output_config" not in calls[0]
     assert calls[1]["temperature"] == 0.2
+    assert calls[1]["output_config"] == {"effort": "medium"}

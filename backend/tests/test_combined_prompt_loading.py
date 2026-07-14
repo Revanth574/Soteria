@@ -66,7 +66,11 @@ def test_combined_prompt_env_path_builds_same_prompts_as_manual_split(tmp_path: 
     assert extractor_config.timeout_seconds == 300.0
 
 
-def test_timeout_env_unset_keeps_existing_default_for_legacy_config(tmp_path: Path) -> None:
+def test_timeout_env_unset_keeps_existing_default_for_legacy_config(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
     extraction_config = ExtractionConfig.from_env(
         env={
             "ANTHROPIC_API_KEY": "test-key",
@@ -80,7 +84,46 @@ def test_timeout_env_unset_keeps_existing_default_for_legacy_config(tmp_path: Pa
     )
 
     assert extraction_config.timeout_seconds == 120.0
+    assert extraction_config.reasoning_effort is None
     assert extractor_config.timeout_seconds == 120.0
+    assert extractor_config.reasoning_effort is None
+
+
+def test_reasoning_effort_env_reaches_both_extractor_config_factories(tmp_path: Path) -> None:
+    combined_prompt_path = tmp_path / "extract_policy_v1.2.md"
+    combined_prompt_path.write_text(COMBINED_PROMPT, encoding="utf-8")
+    extraction_config = ExtractionConfig.from_env(
+        env={
+            "ANTHROPIC_API_KEY": "test-key",
+            "ANTHROPIC_MODEL": "claude-test",
+            "ANTHROPIC_REASONING_EFFORT": "medium",
+            "SOTERIA_COMBINED_PROMPT_PATH": str(combined_prompt_path),
+        }
+    )
+
+    legacy_extractor_config = ClaudeExtractorConfig.from_extraction_config(
+        extraction_config,
+        system_prompt_path=tmp_path / "system.md",
+    )
+    combined_extractor_config = ClaudeExtractorConfig.from_combined_file(
+        extraction_config,
+        combined_prompt_path=combined_prompt_path,
+    )
+
+    assert extraction_config.reasoning_effort == "medium"
+    assert legacy_extractor_config.reasoning_effort == "medium"
+    assert combined_extractor_config.reasoning_effort == "medium"
+
+
+def test_invalid_reasoning_effort_is_rejected_during_config_load() -> None:
+    with pytest.raises(ConfigurationError, match="ANTHROPIC_REASONING_EFFORT"):
+        ExtractionConfig.from_env(
+            env={
+                "ANTHROPIC_API_KEY": "test-key",
+                "ANTHROPIC_MODEL": "claude-test",
+                "ANTHROPIC_REASONING_EFFORT": "extreme",
+            }
+        )
 
 
 def test_combined_prompt_env_path_set_alone_is_valid(tmp_path: Path) -> None:

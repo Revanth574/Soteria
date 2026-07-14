@@ -10,6 +10,7 @@ from soteria.extraction.errors import ConfigurationError
 _DEFAULT_MAX_TOKENS = 16000
 _DEFAULT_TIMEOUT_SECONDS = 120.0
 _DEFAULT_PROMPT_PATH = Path("prompts/extract_policy_v1.2.md")
+_REASONING_EFFORT_LEVELS = frozenset({"low", "medium", "high", "xhigh", "max"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,6 +20,7 @@ class ExtractionConfig:
     api_key: str
     max_tokens: int = _DEFAULT_MAX_TOKENS
     temperature: float | None = None
+    reasoning_effort: str | None = None
     timeout_seconds: float = _DEFAULT_TIMEOUT_SECONDS
     combined_prompt_path: Path | None = None
 
@@ -57,6 +59,9 @@ class ExtractionConfig:
             api_key=api_key,
             max_tokens=int(merged_env.get("ANTHROPIC_MAX_TOKENS", str(_DEFAULT_MAX_TOKENS))),
             temperature=_optional_float(merged_env.get("ANTHROPIC_TEMPERATURE")),
+            reasoning_effort=_optional_reasoning_effort(
+                merged_env.get("ANTHROPIC_REASONING_EFFORT")
+            ),
             timeout_seconds=float(
                 merged_env.get("ANTHROPIC_TIMEOUT_SECONDS", str(_DEFAULT_TIMEOUT_SECONDS))
             ),
@@ -99,3 +104,16 @@ def _optional_float(value: str | None) -> float | None:
     if value is None or not value.strip():
         return None
     return float(value)
+
+
+def _optional_reasoning_effort(value: str | None) -> str | None:
+    if value is None or not value.strip():
+        return None
+
+    effort = value.strip()
+    if effort not in _REASONING_EFFORT_LEVELS:
+        allowed_levels = ", ".join(sorted(_REASONING_EFFORT_LEVELS))
+        raise ConfigurationError(
+            f"ANTHROPIC_REASONING_EFFORT must be one of: {allowed_levels}."
+        )
+    return effort

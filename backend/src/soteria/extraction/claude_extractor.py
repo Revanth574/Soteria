@@ -26,6 +26,7 @@ class ClaudeExtractorConfig:
     api_key: str
     max_tokens: int = 16000
     temperature: float | None = None
+    reasoning_effort: str | None = None
     timeout_seconds: float = 120.0
     system_prompt_text: str | None = None
     extraction_prompt_text: str | None = None
@@ -44,6 +45,7 @@ class ClaudeExtractorConfig:
             api_key=config.api_key,
             max_tokens=config.max_tokens,
             temperature=config.temperature,
+            reasoning_effort=config.reasoning_effort,
             timeout_seconds=config.timeout_seconds,
         )
 
@@ -68,6 +70,7 @@ class ClaudeExtractorConfig:
             api_key=config.api_key,
             max_tokens=config.max_tokens,
             temperature=config.temperature,
+            reasoning_effort=config.reasoning_effort,
             timeout_seconds=config.timeout_seconds,
             system_prompt_text=system_prompt,
             extraction_prompt_text=extraction_prompt,
@@ -83,6 +86,7 @@ class ClaudeClient(Protocol):
         model: str,
         max_tokens: int,
         temperature: float | None,
+        effort: str | None,
         timeout_seconds: float,
     ) -> str:
         """Return model text for one Claude Messages request."""
@@ -102,6 +106,7 @@ class AnthropicClaudeClient:
         model: str,
         max_tokens: int,
         temperature: float | None,
+        effort: str | None,
         timeout_seconds: float,
     ) -> str:
         try:
@@ -121,6 +126,8 @@ class AnthropicClaudeClient:
             }
             if temperature is not None:
                 request_kwargs["temperature"] = temperature
+            if effort is not None:
+                request_kwargs["output_config"] = {"effort": effort}
             message = client.messages.create(**request_kwargs)
         except TimeoutError as exc:
             raise ExtractionAdapterError("Claude request timed out.") from exc
@@ -177,6 +184,7 @@ class ClaudeExtractor:
             model=self.config.model,
             max_tokens=self.config.max_tokens,
             temperature=self.config.temperature,
+            effort=self.config.reasoning_effort,
             timeout_seconds=self.config.timeout_seconds,
         )
         payload = _normalize_string_nulls(_loads_json_response(response_text))
