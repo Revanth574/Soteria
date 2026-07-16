@@ -39,6 +39,7 @@ _TOKEN_RE = re.compile(r"^[a-fA-F0-9]{32}$")
 _MULTIPART_OVERHEAD_ALLOWANCE_BYTES = 16 * 1024
 _STATIC_DIR = Path(__file__).resolve().parents[1] / "web" / "static"
 _LOGGER = logging.getLogger(__name__)
+_THEME_COOKIE = "soteria_theme"
 
 
 class BackgroundTaskQueue(Protocol):
@@ -168,8 +169,29 @@ def create_app(
             return HTMLResponse(render_not_found_page(), status_code=404)
         return RedirectResponse(f"/a/{attachment.session_token}/full", status_code=303)
 
+    @app.post("/theme")
+    async def set_theme(request: Request) -> Response:
+        form = await request.form()
+        theme = str(form.get("theme") or "light")
+        if theme not in {"light", "dark"}:
+            theme = "light"
+        next_path = str(form.get("next") or "/")
+        if not next_path.startswith("/") or next_path.startswith("//"):
+            next_path = "/"
+        response = RedirectResponse(next_path, status_code=303)
+        response.set_cookie(
+            _THEME_COOKIE,
+            theme,
+            max_age=365 * 24 * 60 * 60,
+            path="/",
+            secure=base_url.startswith("https://"),
+            httponly=True,
+            samesite="lax",
+        )
+        return response
+
     @app.get("/a/{session_token}/full", response_class=HTMLResponse)
-    async def full_results(session_token: str) -> HTMLResponse:
+    async def full_results(session_token: str, request: Request) -> HTMLResponse:
         record = _record_or_none(flow, session_token)
         if record is None or record.account_id is None:
             return HTMLResponse(render_not_found_page(), status_code=404)
@@ -177,7 +199,15 @@ def create_app(
             return HTMLResponse(render_processing_page(session_token=session_token))
         if record.status == "failed":
             return HTMLResponse(render_failure_page(session_token=session_token))
-        return HTMLResponse(render_full_results(json.loads(record.analysis_json)))
+        theme = request.cookies.get(_THEME_COOKIE, "light")
+        return HTMLResponse(
+            render_full_results(
+                json.loads(record.analysis_json),
+                theme=theme,
+                current_path=request.url.path,
+                raw_analysis_json=record.analysis_json,
+            )
+        )
 
     return app
 

@@ -757,3 +757,44 @@ the worst failure mode).
 - Record smoke-test API costs in PROGRESS from console.anthropic.com.
 - Consider installing sqlite3 CLI on VM for DB inspection (app itself doesn't
   need it).
+
+## Full-tier analysis design - 2026-07-15
+
+Status: implementation complete on `feature/design-full-tier`; awaiting
+architect review. This branch changes only the signed-up
+`GET /a/{token}/full` presentation. The anonymous preview contract and its
+renderer remain unchanged.
+
+Implemented:
+- Rebuilt the full analysis as a certified-record reading experience using the
+  supplied desktop light, desktop dark, and 430px mobile artifacts. Light is
+  the default; the secondary dark theme is selected explicitly and persisted
+  in a cookie. No operating-system theme detection is used.
+- Added policy identity, deterministic Policy Health Score, verdict summary,
+  complete red-flag cards, waiting-period timeline, coverage prose, exact
+  stored extraction JSON, honest-gap disclosure, and saved-analysis action in
+  the required section order.
+- Added the 15 supplied glossary display terms and definitions verbatim, with
+  keyboard-focusable and tap-capable CSS-only definitions. Extracted content
+  remains escaped, and source clauses are rendered without truncation or
+  whitespace normalization.
+
+Validation:
+- `python -m pytest backend/tests/test_full_tier_design.py -q` passes with 14
+  test cases, including zero and 15+ flags, nulls, long clauses/names, score
+  arithmetic, exact glossary copy, palette discipline, section order, and
+  cookie persistence.
+- `python -m pytest backend/tests -q` passes.
+- `python -m compileall -q backend/src` and `git diff --check` pass.
+- Browser verification passed at 1280px in light and dark themes and at 430px
+  in the default light theme: no console warnings/errors, no horizontal
+  overflow, no dropped/reordered sections, and the dark selection survives a
+  reload.
+
+Required follow-up (not built on this render-only branch):
+- Persist a `policy_start_date` field wherever upload/signup captures policy
+  metadata, including the store/model migration and route plumbing. Until that
+  exists, the renderer explicitly states that calendar waiting-period end dates
+  cannot be calculated; it does not invent dates. Once persisted, pass that
+  value to the existing renderer input to enable server-side calendar-aware
+  end-date calculation.

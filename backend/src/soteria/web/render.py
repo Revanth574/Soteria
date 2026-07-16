@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from html import escape
 import json
 from typing import Any
@@ -60,27 +60,22 @@ def render_anonymous_results(analysis: dict[str, Any], *, session_token: str) ->
     )
 
 
-def render_full_results(analysis: dict[str, Any]) -> str:
-    sections = [
-        ("Coverage", analysis.get("coverage")),
-        ("Waiting Periods", analysis.get("waiting_periods")),
-        ("Sub-limits", analysis.get("sub_limits")),
-        ("Exclusions", analysis.get("exclusions")),
-        ("All Red Flags", analysis.get("red_flags")),
-    ]
-    section_html = "\n".join(_render_group(title, value) for title, value in sections)
-    return _page(
-        title="Soteria Full Analysis",
-        body=f"""
-        <main class="sheet">
-          <section class="summary-card">
-            <p class="eyebrow">Saved analysis</p>
-            <h1>Full policy analysis</h1>
-            <p>{_text(analysis.get("summary") or "No summary was returned.")}</p>
-          </section>
-          {section_html}
-        </main>
-        """,
+def render_full_results(
+    analysis: dict[str, Any],
+    *,
+    theme: str = "light",
+    current_path: str = "/",
+    policy_start_date: date | None = None,
+    raw_analysis_json: str | None = None,
+) -> str:
+    from soteria.web.full_analysis import render_full_analysis
+
+    return render_full_analysis(
+        analysis,
+        theme=theme,
+        current_path=current_path,
+        policy_start_date=policy_start_date,
+        raw_analysis_json=raw_analysis_json,
     )
 
 
