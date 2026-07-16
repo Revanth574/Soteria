@@ -48,4 +48,7 @@ class AnalysisWebController:
         )
         if record is None:
             return render_expired_page()
-        return render_full_results(json.loads(record.analysis_json))
+        return render_full_results(
+            json.loads(record.analysis_json),
+            raw_analysis_json=record.analysis_json,
+        )

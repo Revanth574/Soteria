@@ -189,21 +189,20 @@ def test_field_outside_anonymous_tier_is_absent_not_hidden() -> None:
     assert "Cosmetic raw clause" not in rendered
 
 
-def test_full_signed_up_results_group_fields_with_source_clause_and_confidence() -> None:
+def test_full_signed_up_results_map_fields_with_source_clause_and_confidence() -> None:
     rendered = render_full_results(_analysis_with_flags(5))
 
-    assert "Coverage" in rendered
-    assert "Waiting Periods" in rendered
-    assert "Sub-limits" in rendered
-    assert "Exclusions" in rendered
-    assert "All Red Flags" in rendered
+    assert "What's covered" in rendered
+    assert "Waiting periods" in rendered
+    assert "Top red flags" in rendered
+    assert "View extracted data" in rendered
     assert "Full tier only coverage value" in rendered
     assert "Full tier coverage clause" in rendered
-    assert "Confidence: 0.91" in rendered
+    assert '"confidence": 0.91' in rendered
     assert "Maternity raw clause" in rendered
-    assert "Confidence: 0.83" in rendered
+    assert '"confidence": 0.83' in rendered
     assert "Cosmetic raw clause" in rendered
-    assert "Confidence: 0.95" in rendered
+    assert '"confidence": 0.95' in rendered
     assert "<details" in rendered
 
 
@@ -297,9 +296,9 @@ def test_signup_token_consumption_renders_signed_up_full_tier(tmp_path: Path) ->
 
     rendered = controller.consume_signup(signup_token=token.token)
 
-    assert "Full policy analysis" in rendered
+    assert "Soteria Full Policy Analysis" in rendered
     assert "Full tier coverage clause" in rendered
-    assert "All Red Flags" in rendered
+    assert "Top red flags" in rendered
 
 
 def test_gold_super_star_anonymous_render_dump_fixture() -> None:
