@@ -169,7 +169,7 @@ def test_anonymous_results_contains_exact_top_three_raw_clauses_only() -> None:
 
     rendered = render_anonymous_results(analysis, session_token="tok")
 
-    assert rendered.count('class="red-flag-card"') == 3
+    assert rendered.count('class="risk-card"') == 3
     for index in range(1, 4):
         assert f"Flag {index}" in rendered
         assert f"FULL RAW CLAUSE {index}\nLine two {index}" in html.unescape(rendered)

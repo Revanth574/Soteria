@@ -6,6 +6,11 @@ import json
 from typing import Any
 
 from soteria.ephemeral import EphemeralConfig, EphemeralStore
+from soteria.web.design_system import (
+    _attr as _design_attr,
+    _glossary_text,
+    render_red_flag_card,
+)
 
 
 def render_upload_page(config: EphemeralConfig) -> str:
@@ -29,35 +34,82 @@ def render_upload_page(config: EphemeralConfig) -> str:
     )
 
 
-def render_anonymous_results(analysis: dict[str, Any], *, session_token: str) -> str:
-    summary = _text(analysis.get("summary") or "No summary was returned.")
+def render_anonymous_results(
+    analysis: dict[str, Any],
+    *,
+    session_token: str,
+    theme: str = "light",
+    current_path: str | None = None,
+) -> str:
+    selected_theme = theme if theme in {"light", "dark"} else "light"
+    next_theme = "dark" if selected_theme == "light" else "light"
+    theme_icon = "&#9790;" if next_theme == "dark" else "&#9788;"
+    path = current_path or f"/a/{session_token}"
+    summary = analysis.get("summary") or "No summary was returned."
     red_flags = _list(analysis.get("red_flags"))[:3]
-    flag_cards = "\n".join(_render_red_flag(flag, index) for index, flag in enumerate(red_flags, 1))
-    return _page(
-        title="Soteria Analysis Preview",
-        body=f"""
-        <main class="sheet">
-          <section class="summary-card">
-            <p class="eyebrow">Signup-free analysis</p>
-            <h1>Policy summary</h1>
-            <p>{summary}</p>
-          </section>
-          <section>
-            <h2>Top red flags</h2>
-            <div class="red-flags">{flag_cards}</div>
-          </section>
-          <section class="signup-gate">
-            <h2>Keep this analysis</h2>
-            <p>The preview above is complete. Sign up only if you want to keep the full analysis after the anonymous session expires.</p>
-            <form method="post" action="/signup/request">
-              <input type="hidden" name="session_token" value="{_attr(session_token)}">
-              <label>Email <input type="email" name="email" required></label>
-              <button type="submit">Send magic link</button>
-            </form>
-          </section>
-        </main>
-        """,
-    )
+    flag_cards = "".join(render_red_flag_card(flag, show_title=True) for flag in red_flags)
+    if not flag_cards:
+        flag_cards = (
+            '<p class="no-risks">No red flags were identified in this extraction. '
+            "Review the wording before relying on any claim outcome.</p>"
+        )
+    return f"""<!doctype html>
+<html lang="en" data-theme="{_design_attr(selected_theme)}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/full-analysis.css">
+  <title>Soteria Analysis Preview</title>
+</head>
+<body class="full-analysis-body anonymous-preview-body">
+  <main class="analysis-shell anonymous-shell">
+    <header class="brand-bar">
+      <div class="brand-lockup">
+        <span class="brand-name">Soteria</span>
+        <span class="brand-kicker">insurance auditor</span>
+      </div>
+      <div class="brand-actions">
+        <span class="paid-by-you"><span aria-hidden="true"></span>paid by you</span>
+        <form method="post" action="/theme" class="theme-form">
+          <input type="hidden" name="theme" value="{_design_attr(next_theme)}">
+          <input type="hidden" name="next" value="{_design_attr(path)}">
+          <button class="theme-toggle" type="submit" aria-label="Switch to {next_theme} theme" title="Switch to {next_theme} theme">{theme_icon}</button>
+        </form>
+      </div>
+    </header>
+
+    <section class="preview-summary" aria-labelledby="preview-title">
+      <p class="section-kicker">Signup-free analysis</p>
+      <h1 id="preview-title">Policy summary</h1>
+      <p>{_glossary_text(summary)}</p>
+    </section>
+
+    <section class="risk-section preview-risks" aria-labelledby="risk-title">
+      <div class="section-heading-row">
+        <h2 id="risk-title">Top red flags</h2>
+        <span>{len(red_flags)} shown</span>
+      </div>
+      <div class="risk-grid">{flag_cards}</div>
+    </section>
+
+    <section class="keep-card signup-gate" aria-labelledby="keep-title">
+      <div>
+        <p class="section-kicker">Persistence is optional</p>
+        <h2 id="keep-title">Keep this analysis</h2>
+        <p>The preview above is complete. Sign up only if you want to keep the full analysis after the anonymous session expires.</p>
+      </div>
+      <form method="post" action="/signup/request" class="signup-form">
+        <input type="hidden" name="session_token" value="{_design_attr(session_token)}">
+        <label for="signup-email">Email</label>
+        <div class="signup-controls">
+          <input id="signup-email" type="email" name="email" autocomplete="email" required>
+          <button class="primary-action" type="submit">Send magic link</button>
+        </div>
+      </form>
+    </section>
+  </main>
+</body>
+</html>"""
 
 
 def render_full_results(
@@ -188,18 +240,6 @@ def render_upload_too_large_page() -> str:
         </main>
         """,
     )
-
-
-def _render_red_flag(flag: dict[str, Any], index: int) -> str:
-    return f"""
-    <article class="red-flag-card">
-      <p class="eyebrow">Flag {index}</p>
-      <h3>{_text(flag.get("title") or "Untitled red flag")}</h3>
-      <p>{_text(flag.get("plain_explanation") or "")}</p>
-      <p class="scenario">{_text(flag.get("scenario") or "")}</p>
-      {render_raw_clause_block(flag.get("raw_clause"))}
-    </article>
-    """
 
 
 def _render_group(title: str, value: Any) -> str:

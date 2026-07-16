@@ -131,7 +131,7 @@ def create_app(
         return RedirectResponse(f"/a/{response.session_token}", status_code=303)
 
     @app.get("/a/{session_token}", response_class=HTMLResponse)
-    async def anonymous_results(session_token: str) -> HTMLResponse:
+    async def anonymous_results(session_token: str, request: Request) -> HTMLResponse:
         record = _record_or_none(flow, session_token)
         if record is None:
             return HTMLResponse(render_not_found_page(), status_code=404)
@@ -139,8 +139,14 @@ def create_app(
             return HTMLResponse(render_processing_page(session_token=session_token))
         if record.status == "failed":
             return HTMLResponse(render_failure_page(session_token=session_token))
+        theme = request.cookies.get(_THEME_COOKIE, "light")
         return HTMLResponse(
-            render_anonymous_results(json.loads(record.analysis_json), session_token=session_token)
+            render_anonymous_results(
+                json.loads(record.analysis_json),
+                session_token=session_token,
+                theme=theme,
+                current_path=request.url.path,
+            )
         )
 
     @app.post("/signup/request", response_class=HTMLResponse)
